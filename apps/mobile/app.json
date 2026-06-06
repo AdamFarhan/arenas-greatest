@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "Riftbound Tracker",
+    "slug": "riftbound-tracker",
+    "scheme": "riftboundtracker",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "plugins": ["expo-router", "expo-secure-store"]
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "riftbound-tracker",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm --workspace @riftbound/web run dev",
+    "dev:mobile": "npm --workspace @riftbound/mobile run start",
+    "build:web": "npm --workspace @riftbound/web run build",
+    "test": "npm --workspace @riftbound/core run test",
+    "typecheck": "npm --workspaces --if-present run typecheck",
+    "db:types": "supabase gen types typescript --local > packages/db/src/database.types.ts"
+  },
+  "overrides": {
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "react-dom": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-reanimated": "4.1.7"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "babel-preset-expo": "~54.0.11",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-native": "0.81.5",
+    "typescript": "^5.7.3"
+  }
+}
