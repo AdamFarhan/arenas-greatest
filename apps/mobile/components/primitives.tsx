@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { colors, radius } from "@/lib/theme";
 
 export function Card({ children }: { children: ReactNode }) {
   return <View style={styles.card}>{children}</View>;
@@ -50,7 +51,7 @@ export function Field({
       value={value}
       onChangeText={onChangeText}
       placeholder={placeholder}
-      placeholderTextColor="#64748b"
+      placeholderTextColor={colors.mutedForeground}
       multiline={multiline}
       style={[styles.input, multiline && styles.textarea]}
     />
@@ -60,30 +61,30 @@ export function Field({
 const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
-    borderColor: "#e2e8f0",
-    backgroundColor: "#ffffff",
-    borderRadius: 8,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+    borderRadius: radius.md,
     padding: 16,
     gap: 12
   },
   button: {
     minHeight: 44,
-    borderRadius: 8,
+    borderRadius: radius.md,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 14,
     paddingVertical: 10
   },
   primary: {
-    backgroundColor: "#0f172a"
+    backgroundColor: colors.primary
   },
   secondary: {
-    backgroundColor: "#f1f5f9"
+    backgroundColor: colors.secondary
   },
   outline: {
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: "#e2e8f0"
+    borderColor: colors.border
   },
   disabled: {
     opacity: 0.5
@@ -96,19 +97,19 @@ const styles = StyleSheet.create({
     fontWeight: "700"
   },
   primaryText: {
-    color: "#f8fafc"
+    color: colors.primaryForeground
   },
   secondaryText: {
-    color: "#0f172a"
+    color: colors.secondaryForeground
   },
   input: {
     minHeight: 44,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
-    borderRadius: 8,
+    borderColor: colors.input,
+    borderRadius: radius.md,
     paddingHorizontal: 12,
-    color: "#0f172a",
-    backgroundColor: "#ffffff"
+    color: colors.foreground,
+    backgroundColor: colors.background
   },
   textarea: {
     minHeight: 96,

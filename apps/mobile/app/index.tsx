@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import {
   Alert,
   Modal,
@@ -18,12 +19,14 @@ import {
   startGame,
   type MatchState,
   type PlayerSide,
+  type ScoreEventType,
   type ScoreReason,
   type WinningPoint
 } from "@riftbound/core";
 import { LEGENDS } from "@riftbound/legends";
 import { Button, Card, Field } from "@/components/primitives";
 import { getMobileSupabase, hasSupabaseConfig } from "@/lib/supabase";
+import { colors, radius } from "@/lib/theme";
 
 type SetupDraft = {
   startingPlayer: PlayerSide;
@@ -230,9 +233,18 @@ export default function ScorerScreen() {
         />
 
         <View style={styles.matchBar}>
-          <Text style={styles.matchBarText}>
-            Game {activeGame?.gameNumber ?? match.games.length + 1} · Match {match.wins.player}-{match.wins.opponent}
-          </Text>
+          <View style={styles.matchMeta}>
+            <Text style={styles.matchBarText}>
+              Game {activeGame?.gameNumber ?? match.games.length + 1} · Match {match.wins.player}-{match.wins.opponent}
+            </Text>
+            {activeGame ? (
+              <Text style={styles.matchSubtext}>
+                First: {activeGame.startingPlayer === "player" ? "You" : "Opponent"} · To {activeGame.winningPoint}
+              </Text>
+            ) : (
+              <Text style={styles.matchSubtext}>Set up the next game</Text>
+            )}
+          </View>
           <Pressable style={styles.historyButton} onPress={() => setHistoryOpen(true)}>
             <Text style={styles.historyButtonText}>History</Text>
           </Pressable>
@@ -293,27 +305,59 @@ function PlayerPanel({
   onScore: (reason: ScoreReason) => void;
   onEdit: () => void;
 }) {
+  const canEdit = !disabled;
+
   return (
     <View style={[styles.panel, inverted && styles.inverted]}>
-      <Text style={styles.playerLabel}>{label}</Text>
-      <Text style={styles.score}>{score}</Text>
-      <View style={styles.scoreControls}>
-        <ScoreButton label="Holding" onPress={() => onScore("holding")} disabled={disabled} />
-        <ScoreButton label="Conquering" onPress={() => onScore("conquering")} disabled={disabled} />
-        <ScoreButton label="Ability" onPress={() => onScore("ability")} disabled={disabled} />
-        <Pressable style={styles.iconButton} onPress={onEdit} disabled={disabled}>
-          <Text style={styles.iconButtonText}>Edit</Text>
+      <View style={styles.playerHeader}>
+        <Text style={styles.playerLabel}>{label}</Text>
+        {canEdit ? <Text style={styles.playerStatus}>Tap score to edit</Text> : null}
+      </View>
+      <View style={styles.playerMain}>
+        <Pressable onPress={onEdit} disabled={disabled} style={[styles.scorePad, disabled && styles.disabled]}>
+          <Text style={styles.score}>{score}</Text>
         </Pressable>
+      </View>
+      <View style={styles.scoreControls}>
+        <View style={styles.primaryScoreActions}>
+          <ScoreButton reason="holding" onPress={() => onScore("holding")} disabled={disabled} />
+          <ScoreButton reason="conquering" onPress={() => onScore("conquering")} disabled={disabled} />
+        </View>
+        <ScoreButton reason="ability" compact onPress={() => onScore("ability")} disabled={disabled} />
       </View>
     </View>
   );
 }
 
-function ScoreButton({ label, onPress, disabled }: { label: string; onPress: () => void; disabled: boolean }) {
+function ScoreButton({
+  reason,
+  compact = false,
+  onPress,
+  disabled
+}: {
+  reason: ScoreReason;
+  compact?: boolean;
+  onPress: () => void;
+  disabled: boolean;
+}) {
+  const config = SCORE_REASON_META[reason];
+
   return (
-    <Pressable style={[styles.scoreButton, disabled && styles.disabled]} onPress={onPress} disabled={disabled}>
-      <Text style={styles.scoreButtonIcon}>+</Text>
-      <Text style={styles.scoreButtonText}>{label}</Text>
+    <Pressable
+      style={[
+        compact ? styles.compactScoreButton : styles.scoreButton,
+        { borderColor: config.color },
+        disabled && styles.disabled
+      ]}
+      onPress={onPress}
+      disabled={disabled}
+    >
+      <MaterialCommunityIcons
+        name={config.icon}
+        size={compact ? 24 : 36}
+        color={config.color}
+      />
+      <Text style={[styles.scoreButtonText, compact && styles.compactScoreButtonText]}>{config.label}</Text>
     </Pressable>
   );
 }
@@ -368,38 +412,60 @@ function GameSetupModal({
 }
 
 function HistoryModal({ open, onClose, match }: { open: boolean; onClose: () => void; match: MatchState }) {
+  const activeGame = useMemo(() => {
+    try {
+      return getActiveGame(match);
+    } catch {
+      return undefined;
+    }
+  }, [match]);
   const history = useMemo(() => {
     try {
-      return getCurrentGameHistory(getActiveGame(match));
+      return activeGame ? getCurrentGameHistory(activeGame) : [];
     } catch {
       return [];
     }
-  }, [match]);
+  }, [activeGame]);
 
   return (
-    <Modal visible={open} animationType="slide" transparent>
-      <View style={styles.sheet}>
-        <View style={styles.sheetHandle} />
-        <Text style={styles.title}>Current game history</Text>
-        <ScrollView style={styles.historyList}>
-          {history.length ? (
-            history.map((row) => (
-              <View key={row.id} style={styles.historyRow}>
-                <View>
-                  <Text style={styles.historyTitle}>{row.player === "player" ? "You" : "Opponent"}</Text>
-                  <Text style={styles.muted}>{row.label}</Text>
+    <Modal visible={open} animationType="fade" transparent>
+      <View style={styles.sheetBackdrop}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <View style={styles.sheet}>
+          <View style={styles.sheetHandle} />
+          <View style={styles.sheetHeader}>
+            <View>
+              <Text style={styles.title}>Current game history</Text>
+              <Text style={styles.muted}>
+                {activeGame
+                  ? `Game ${activeGame.gameNumber} · ${activeGame.score.player}-${activeGame.score.opponent} · To ${activeGame.winningPoint}`
+                  : "No active game"}
+              </Text>
+            </View>
+          </View>
+          <ScrollView style={styles.historyList}>
+            {history.length ? (
+              history.map((row) => (
+                <View key={row.id} style={styles.historyRow}>
+                  <View style={styles.historyPrimary}>
+                    <View style={[styles.historyDot, { backgroundColor: getEventColor(row.type) }]} />
+                    <View>
+                      <Text style={styles.historyTitle}>{row.player === "player" ? "You" : "Opponent"}</Text>
+                      <Text style={styles.muted}>{row.label}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.historyMeta}>
+                    <Text style={styles.historyTitle}>{row.pointsDelta > 0 ? `+${row.pointsDelta}` : row.pointsDelta}</Text>
+                    <Text style={styles.muted}>{row.score}</Text>
+                  </View>
                 </View>
-                <View style={styles.historyMeta}>
-                  <Text style={styles.historyTitle}>{row.pointsDelta > 0 ? `+${row.pointsDelta}` : row.pointsDelta}</Text>
-                  <Text style={styles.muted}>{row.score}</Text>
-                </View>
-              </View>
-            ))
-          ) : (
-            <Text style={styles.muted}>No events yet.</Text>
-          )}
-        </ScrollView>
-        <Button variant="outline" onPress={onClose}>Close</Button>
+              ))
+            ) : (
+              <Text style={styles.muted}>No events yet.</Text>
+            )}
+          </ScrollView>
+          <Button variant="outline" onPress={onClose}>Close</Button>
+        </View>
       </View>
     </Modal>
   );
@@ -523,10 +589,39 @@ function LegendPicker({ label, value, onChange }: { label: string; value: string
   );
 }
 
+const SCORE_REASON_META: Record<
+  ScoreReason,
+  { label: string; color: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }
+> = {
+  holding: {
+    label: "Hold",
+    color: colors.holding,
+    icon: "shield"
+  },
+  conquering: {
+    label: "Conquer",
+    color: colors.conquering,
+    icon: "sword-cross"
+  },
+  ability: {
+    label: "Ability",
+    color: colors.ability,
+    icon: "lightning-bolt"
+  }
+};
+
+function getEventColor(type: ScoreEventType) {
+  if (type === "manual_adjustment") {
+    return colors.ring;
+  }
+
+  return SCORE_REASON_META[type].color;
+}
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#fafafa"
+    backgroundColor: colors.background
   },
   centered: {
     flex: 1,
@@ -540,110 +635,162 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    padding: 16,
-    gap: 16,
-    backgroundColor: "#ffffff"
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 13,
+    backgroundColor: colors.background,
+    position: "relative"
   },
   inverted: {
     transform: [{ rotate: "180deg" }],
     borderTopWidth: 1,
-    borderTopColor: "#e2e8f0"
+    borderTopColor: colors.border
   },
   playerLabel: {
-    color: "#64748b",
+    color: colors.mutedForeground,
     fontSize: 15,
     fontWeight: "700",
     textTransform: "uppercase"
   },
+  playerHeader: {
+    position: "absolute",
+    top: 12,
+    left: 16,
+    right: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between"
+  },
+  playerStatus: {
+    color: colors.mutedForeground,
+    fontSize: 11,
+    fontWeight: "700"
+  },
+  scorePad: {
+    width: "100%",
+    maxWidth: 420,
+    alignItems: "center",
+    justifyContent: "center",
+    transform: [{ translateY: -28 }]
+  },
+  playerMain: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 0,
+    marginBottom: 0
+  },
   score: {
-    color: "#0f172a",
-    fontSize: 108,
-    lineHeight: 118,
+    color: colors.foreground,
+    fontSize: 104,
+    lineHeight: 108,
     fontWeight: "800"
   },
   scoreControls: {
     width: "100%",
-    maxWidth: 420,
+    maxWidth: 292,
+    height: 124,
+    alignItems: "center",
+    justifyContent: "flex-start",
+    position: "relative"
+  },
+  primaryScoreActions: {
+    width: "100%",
     flexDirection: "row",
-    gap: 8,
-    alignItems: "center"
+    justifyContent: "space-between"
   },
   scoreButton: {
-    flex: 1,
-    minHeight: 48,
-    borderRadius: 8,
-    backgroundColor: "#f1f5f9",
+    width: 104,
+    height: 104,
+    borderRadius: 999,
+    borderWidth: 1,
+    backgroundColor: colors.card,
     alignItems: "center",
     justifyContent: "center",
-    gap: 2
+    gap: 6
+  },
+  compactScoreButton: {
+    position: "absolute",
+    left: "50%",
+    bottom: 0,
+    transform: [{ translateX: -31 }],
+    width: 62,
+    height: 62,
+    borderRadius: 999,
+    borderWidth: 1,
+    backgroundColor: colors.card,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4
   },
   scoreButtonText: {
-    color: "#0f172a",
-    fontSize: 11,
+    color: colors.secondaryForeground,
+    fontSize: 12,
     fontWeight: "800"
   },
-  scoreButtonIcon: {
-    color: "#0f172a",
-    fontSize: 16,
-    fontWeight: "900"
+  compactScoreButtonText: {
+    fontSize: 8
   },
   iconButton: {
     width: 48,
     height: 48,
-    borderRadius: 8,
+    borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#ffffff"
-  },
-  iconButtonText: {
-    color: "#0f172a",
-    fontSize: 11,
-    fontWeight: "800"
+    backgroundColor: colors.card
   },
   matchBar: {
-    minHeight: 52,
+    minHeight: 60,
     paddingHorizontal: 14,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: "#e2e8f0",
-    backgroundColor: "#fafafa",
+    borderColor: colors.border,
+    backgroundColor: colors.background,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between"
   },
   matchBarText: {
-    color: "#0f172a",
+    color: colors.foreground,
     fontWeight: "800"
+  },
+  matchMeta: {
+    gap: 3
+  },
+  matchSubtext: {
+    color: colors.mutedForeground,
+    fontSize: 12,
+    fontWeight: "700"
   },
   historyButton: {
     flexDirection: "row",
     gap: 6,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#e2e8f0",
-    borderRadius: 8,
+    borderColor: colors.border,
+    borderRadius: radius.md,
     paddingHorizontal: 10,
     paddingVertical: 8,
-    backgroundColor: "#ffffff"
+    backgroundColor: colors.card
   },
   historyButtonText: {
-    color: "#0f172a",
+    color: colors.cardForeground,
     fontWeight: "800",
     fontSize: 12
   },
   title: {
-    color: "#0f172a",
+    color: colors.foreground,
     fontSize: 22,
     fontWeight: "800"
   },
   muted: {
-    color: "#64748b",
+    color: colors.mutedForeground,
     fontSize: 14
   },
   sectionLabel: {
-    color: "#0f172a",
+    color: colors.foreground,
     fontSize: 13,
     fontWeight: "800"
   },
@@ -656,7 +803,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: 16,
-    backgroundColor: "rgba(15, 23, 42, 0.32)"
+    backgroundColor: colors.backdrop
   },
   sheet: {
     position: "absolute",
@@ -664,32 +811,55 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     maxHeight: "72%",
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    backgroundColor: "#ffffff",
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    backgroundColor: colors.card,
+    borderTopWidth: 1,
+    borderColor: colors.border,
     padding: 16,
     gap: 12
+  },
+  sheetBackdrop: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: colors.backdrop
   },
   sheetHandle: {
     alignSelf: "center",
     width: 44,
     height: 4,
     borderRadius: 999,
-    backgroundColor: "#cbd5e1"
+    backgroundColor: colors.ring
   },
   historyList: {
     maxHeight: 360
   },
+  sheetHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12
+  },
   historyRow: {
-    minHeight: 58,
+    minHeight: 62,
     borderBottomWidth: 1,
-    borderBottomColor: "#e2e8f0",
+    borderBottomColor: colors.border,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between"
   },
+  historyPrimary: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10
+  },
+  historyDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 999
+  },
   historyTitle: {
-    color: "#0f172a",
+    color: colors.foreground,
     fontWeight: "800"
   },
   historyMeta: {
@@ -701,12 +871,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between"
   },
   stepperValue: {
-    color: "#0f172a",
+    color: colors.foreground,
     fontSize: 56,
     fontWeight: "800"
   },
   stepperButtonText: {
-    color: "#0f172a",
+    color: colors.cardForeground,
     fontSize: 24,
     fontWeight: "900"
   },
@@ -723,22 +893,22 @@ const styles = StyleSheet.create({
   },
   legendChip: {
     borderWidth: 1,
-    borderColor: "#e2e8f0",
-    borderRadius: 8,
+    borderColor: colors.border,
+    borderRadius: radius.md,
     paddingHorizontal: 10,
     paddingVertical: 8,
-    backgroundColor: "#ffffff"
+    backgroundColor: colors.card
   },
   legendChipActive: {
-    borderColor: "#0f172a",
-    backgroundColor: "#0f172a"
+    borderColor: colors.primary,
+    backgroundColor: colors.primary
   },
   legendChipText: {
-    color: "#0f172a",
+    color: colors.cardForeground,
     fontWeight: "700"
   },
   legendChipTextActive: {
-    color: "#f8fafc"
+    color: colors.primaryForeground
   },
   disabled: {
     opacity: 0.45

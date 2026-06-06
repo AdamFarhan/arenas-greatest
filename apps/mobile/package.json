@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@expo/vector-icons": "^15.1.1",
     "@riftbound/core": "0.1.0",
     "@riftbound/db": "0.1.0",
     "@riftbound/legends": "0.1.0",
