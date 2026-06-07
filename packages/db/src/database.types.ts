@@ -43,7 +43,7 @@ export type Database = {
           player_legend_id: string;
           opponent_legend_id: string;
           notes: string | null;
-          winner: "player" | "opponent";
+          winner: "player" | "opponent" | "tie";
           player_game_wins: number;
           opponent_game_wins: number;
           played_at: string;
@@ -55,7 +55,7 @@ export type Database = {
           player_legend_id: string;
           opponent_legend_id: string;
           notes?: string | null;
-          winner: "player" | "opponent";
+          winner: "player" | "opponent" | "tie";
           player_game_wins: number;
           opponent_game_wins: number;
           played_at?: string;

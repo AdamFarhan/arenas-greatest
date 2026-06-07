@@ -123,7 +123,7 @@ export function MatchDetailClient({ id }: { id: string }) {
         <Card>
           <CardHeader>
             <CardDescription>Result</CardDescription>
-            <CardTitle>{match.winner === "player" ? "Win" : "Loss"} {match.player_game_wins}-{match.opponent_game_wins}</CardTitle>
+            <CardTitle>{getMatchResultLabel(match.winner)} {match.player_game_wins}-{match.opponent_game_wins}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
@@ -196,4 +196,10 @@ export function MatchDetailClient({ id }: { id: string }) {
       </div>
     </main>
   );
+}
+
+function getMatchResultLabel(winner: string) {
+  if (winner === "player") return "Win";
+  if (winner === "opponent") return "Loss";
+  return "Tie";
 }

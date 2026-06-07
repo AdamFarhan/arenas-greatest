@@ -123,7 +123,7 @@ export default function DashboardPage() {
                 <TableRow key={match.id}>
                   <TableCell>{new Date(match.played_at).toLocaleDateString()}</TableCell>
                   <TableCell>
-                    <Badge>{match.winner === "player" ? "Win" : "Loss"} {match.player_game_wins}-{match.opponent_game_wins}</Badge>
+                    <Badge>{getMatchResultLabel(match.winner)} {match.player_game_wins}-{match.opponent_game_wins}</Badge>
                   </TableCell>
                   <TableCell>{match.player_legend}</TableCell>
                   <TableCell>{match.opponent_legend}</TableCell>
@@ -141,4 +141,10 @@ export default function DashboardPage() {
       </Card>
     </main>
   );
+}
+
+function getMatchResultLabel(winner: string) {
+  if (winner === "player") return "Win";
+  if (winner === "opponent") return "Loss";
+  return "Tie";
 }
