@@ -18,9 +18,10 @@ create table public.matches (
   player_legend_id text not null references public.legends(id),
   opponent_legend_id text not null references public.legends(id),
   notes text,
-  winner text not null check (winner in ('player', 'opponent')),
+  winner text not null check (winner in ('player', 'opponent', 'tie')),
   player_game_wins integer not null check (player_game_wins between 0 and 2),
   opponent_game_wins integer not null check (opponent_game_wins between 0 and 2),
+  duration_seconds integer check (duration_seconds >= 0),
   played_at timestamptz not null default now(),
   created_at timestamptz not null default now()
 );
@@ -50,6 +51,15 @@ create table public.score_events (
   adjusted_score integer,
   created_at timestamptz not null default now()
 );
+
+create index matches_user_played_at_idx
+  on public.matches (user_id, played_at desc);
+
+create index games_match_number_idx
+  on public.games (match_id, game_number);
+
+create index score_events_game_created_at_idx
+  on public.score_events (game_id, created_at);
 
 alter table public.profiles enable row level security;
 alter table public.matches enable row level security;
@@ -126,3 +136,16 @@ $$;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
+
+insert into public.legends (id, name, set_name) values
+  ('ahri', 'Ahri', 'Origins'),
+  ('darius', 'Darius', 'Origins'),
+  ('garen', 'Garen', 'Origins'),
+  ('jinx', 'Jinx', 'Origins'),
+  ('lux', 'Lux', 'Origins'),
+  ('master-yi', 'Master Yi', 'Origins'),
+  ('yasuo', 'Yasuo', 'Origins'),
+  ('vi', 'Vi', 'Origins')
+on conflict (id) do update set
+  name = excluded.name,
+  set_name = excluded.set_name;

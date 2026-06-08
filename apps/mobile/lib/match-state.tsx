@@ -11,6 +11,8 @@ import {
 import { createMatch, type MatchState, type PlayerSide, type WinningPoint } from "@riftbound/core";
 import { LEGENDS } from "@riftbound/legends";
 
+export type SaveState = "idle" | "saving" | "saved" | "failed";
+
 export type SetupDraft = {
   startingPlayer: PlayerSide;
   winningPoint: WinningPoint;
@@ -35,9 +37,12 @@ type MatchContextValue = {
   setOpponentLegendId: (id: string) => void;
   notes: string;
   setNotes: (notes: string) => void;
+  saveState: SaveState;
+  setSaveState: (state: SaveState) => void;
   saveStatus: string;
   setSaveStatus: (status: string) => void;
   elapsedSeconds: number;
+  matchStartedAt: string | null;
   resetMatch: () => void;
 };
 
@@ -56,6 +61,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
   const [playerLegendId, setPlayerLegendId] = useState(LEGENDS[0]?.id ?? "");
   const [opponentLegendId, setOpponentLegendId] = useState(LEGENDS[1]?.id ?? LEGENDS[0]?.id ?? "");
   const [notes, setNotes] = useState("");
+  const [saveState, setSaveState] = useState<SaveState>("idle");
   const [saveStatus, setSaveStatus] = useState("");
   const [matchStartedAt, setMatchStartedAt] = useState<number | null>(null);
   const [matchEndedAt, setMatchEndedAt] = useState<number | null>(null);
@@ -103,12 +109,16 @@ export function MatchProvider({ children }: { children: ReactNode }) {
       setOpponentLegendId,
       notes,
       setNotes,
+      saveState,
+      setSaveState,
       saveStatus,
       setSaveStatus,
       elapsedSeconds,
+      matchStartedAt: matchStartedAt ? new Date(matchStartedAt).toISOString() : null,
       resetMatch() {
         setMatch(createMatch());
         setNotes("");
+        setSaveState("idle");
         setSaveStatus("");
         setReviewOpen(false);
         setHistoryOpen(false);
@@ -122,12 +132,14 @@ export function MatchProvider({ children }: { children: ReactNode }) {
     [
       elapsedSeconds,
       historyOpen,
+      matchStartedAt,
       manualEditPlayer,
       match,
       notes,
       opponentLegendId,
       playerLegendId,
       reviewOpen,
+      saveState,
       saveStatus,
       setupDraft,
       setupOpen

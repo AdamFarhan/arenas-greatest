@@ -46,6 +46,7 @@ export type Database = {
           winner: "player" | "opponent" | "tie";
           player_game_wins: number;
           opponent_game_wins: number;
+          duration_seconds: number | null;
           played_at: string;
           created_at: string;
         };
@@ -58,6 +59,7 @@ export type Database = {
           winner: "player" | "opponent" | "tie";
           player_game_wins: number;
           opponent_game_wins: number;
+          duration_seconds?: number | null;
           played_at?: string;
           created_at?: string;
         };

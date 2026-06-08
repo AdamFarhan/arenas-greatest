@@ -26,3 +26,7 @@ export function getMobileSupabase() {
 export function hasSupabaseConfig() {
   return Boolean(process.env.EXPO_PUBLIC_SUPABASE_URL && process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY);
 }
+
+export function getAuthRedirectUrl() {
+  return process.env.EXPO_PUBLIC_AUTH_REDIRECT_URL ?? "riftboundtracker://";
+}

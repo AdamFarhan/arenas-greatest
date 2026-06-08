@@ -22,3 +22,29 @@ npm run dev:mobile
 ```
 
 Copy `.env.example` to each app as needed and fill in Supabase values.
+
+## Supabase Setup
+
+For a brand-new Supabase project, create the project in the Supabase Dashboard, then run the SQL in:
+
+```txt
+supabase/setup_fresh_project.sql
+```
+
+Add the Expo mobile redirect URL in Supabase Auth:
+
+```txt
+riftboundtracker://
+```
+
+Custom schemes require a development build or standalone app. Expo Go has limited incoming link support, so auth redirect testing is more reliable in a development build.
+
+Then copy `.env.example` into `apps/mobile/.env` and fill in:
+
+```txt
+EXPO_PUBLIC_SUPABASE_URL=
+EXPO_PUBLIC_SUPABASE_ANON_KEY=
+EXPO_PUBLIC_AUTH_REDIRECT_URL=riftboundtracker://
+```
+
+Use the Supabase project URL and a public client key, either the publishable key or legacy anon key. Do not use a service role or secret key in the mobile app.

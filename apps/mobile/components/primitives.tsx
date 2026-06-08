@@ -39,12 +39,20 @@ export function Field({
   value,
   onChangeText,
   placeholder,
-  multiline = false
+  multiline = false,
+  keyboardType = "default",
+  autoCapitalize = "sentences",
+  autoComplete,
+  textContentType
 }: {
   value: string;
   onChangeText: (value: string) => void;
   placeholder: string;
   multiline?: boolean;
+  keyboardType?: "default" | "email-address";
+  autoCapitalize?: "none" | "sentences";
+  autoComplete?: "email";
+  textContentType?: "emailAddress";
 }) {
   return (
     <TextInput
@@ -53,6 +61,11 @@ export function Field({
       placeholder={placeholder}
       placeholderTextColor={colors.mutedForeground}
       multiline={multiline}
+      keyboardType={keyboardType}
+      autoCapitalize={autoCapitalize}
+      autoCorrect={keyboardType === "email-address" ? false : undefined}
+      autoComplete={autoComplete}
+      textContentType={textContentType}
       style={[styles.input, multiline && styles.textarea]}
     />
   );

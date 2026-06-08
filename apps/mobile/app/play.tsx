@@ -20,12 +20,13 @@ import {
   type MatchState,
   type PlayerSide,
   type ScoreEventType,
-type ScoreReason
+  type ScoreReason
 } from "@riftbound/core";
+import { buildCompletedMatchPayload, saveCompletedMatch } from "@riftbound/db";
 import { LEGENDS } from "@riftbound/legends";
 import { BottomMenu } from "@/components/bottom-menu";
 import { Button, Card, Field } from "@/components/primitives";
-import { getMobileSupabase, hasSupabaseConfig } from "@/lib/supabase";
+import { getAuthRedirectUrl, getMobileSupabase, hasSupabaseConfig } from "@/lib/supabase";
 import { useMatchState, type SetupDraft } from "@/lib/match-state";
 import { useSession } from "@/lib/session";
 import { colors, radius } from "@/lib/theme";
@@ -53,9 +54,12 @@ export default function ScorerScreen() {
     setOpponentLegendId,
     notes,
     setNotes,
+    saveState,
+    setSaveState,
     saveStatus,
     setSaveStatus,
     elapsedSeconds,
+    matchStartedAt,
     resetMatch
   } = useMatchState();
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -103,6 +107,15 @@ export default function ScorerScreen() {
   }
 
   async function saveMatch(result: MatchResult | undefined = match.winner) {
+    if (saveState === "saving") {
+      return false;
+    }
+
+    if (saveState === "saved") {
+      setSaveStatus("This match is already saved.");
+      return true;
+    }
+
     if (!result) {
       return false;
     }
@@ -113,82 +126,45 @@ export default function ScorerScreen() {
     }
 
     if (!hasSupabaseConfig()) {
-      setSaveStatus("Saved locally for demo mode. Add Supabase env vars to persist cloud data.");
-      return true;
+      setSaveState("failed");
+      setSaveStatus("Cloud save is unavailable until Supabase env vars are configured.");
+      return false;
     }
+
+    setSaveState("saving");
+    setSaveStatus("Saving match...");
 
     const supabase = getMobileSupabase();
     const { data: userData } = await supabase.auth.getUser();
     const userId = userData.user?.id;
 
     if (!userId) {
+      setSaveState("failed");
+      setSaveStatus("Sign in before saving a cloud match.");
       Alert.alert("Sign in required", "Sign in before saving a cloud match.");
       return false;
     }
 
-    const { data: insertedMatch, error: matchError } = await supabase
-      .from("matches")
-      .insert({
-        user_id: userId,
-        player_legend_id: playerLegendId,
-        opponent_legend_id: opponentLegendId,
-        notes,
-        winner: result,
-        player_game_wins: match.wins.player,
-        opponent_game_wins: match.wins.opponent
-      })
-      .select("id")
-      .single();
+    const payload = buildCompletedMatchPayload(match, {
+      userId,
+      playerLegendId,
+      opponentLegendId,
+      notes,
+      winner: result,
+      playedAt: matchStartedAt ?? new Date().toISOString(),
+      durationSeconds: elapsedSeconds
+    });
 
-    if (matchError || !insertedMatch) {
-      Alert.alert("Save failed", matchError?.message ?? "Could not create match.");
+    const { error } = await saveCompletedMatch(supabase, payload);
+
+    if (error) {
+      setSaveState("failed");
+      setSaveStatus("Save failed. Keep this screen open and try again when you have service.");
+      Alert.alert("Save failed", error.message);
       return false;
     }
 
-    for (const game of match.games) {
-      if (!game.winner) continue;
-
-      const { data: insertedGame, error: gameError } = await supabase
-        .from("games")
-        .insert({
-          match_id: insertedMatch.id,
-          game_number: game.gameNumber,
-          starting_player: game.startingPlayer,
-          winning_point: game.winningPoint,
-          winner: game.winner,
-          player_score: game.score.player,
-          opponent_score: game.score.opponent
-        })
-        .select("id")
-        .single();
-
-      if (gameError || !insertedGame) {
-        Alert.alert("Save failed", gameError?.message ?? "Could not create game.");
-        return false;
-      }
-
-      if (game.events.length) {
-        const { error: eventsError } = await supabase.from("score_events").insert(
-          game.events.map((event) => ({
-            game_id: insertedGame.id,
-            player_side: event.player,
-            event_type: event.type,
-            points_delta: event.pointsDelta,
-            resulting_player_score: event.resultingScore.player,
-            resulting_opponent_score: event.resultingScore.opponent,
-            previous_score: event.previousScore ?? null,
-            adjusted_score: event.adjustedScore ?? null,
-            created_at: event.createdAt
-          }))
-        );
-
-        if (eventsError) {
-          Alert.alert("Save failed", eventsError.message);
-          return false;
-        }
-      }
-    }
-
+    setSaveState("saved");
     setSaveStatus("Match saved.");
     return true;
   }
@@ -200,10 +176,21 @@ export default function ScorerScreen() {
           <Card>
             <Text style={styles.title}>Riftbound Tracker</Text>
             <Text style={styles.muted}>Sign in to save match history to your account.</Text>
-            <Field value={session.email} onChangeText={session.setEmail} placeholder="you@example.com" />
+            <Field
+              value={session.email}
+              onChangeText={session.setEmail}
+              placeholder="you@example.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              textContentType="emailAddress"
+            />
             <Button onPress={signIn} disabled={!session.email && hasSupabaseConfig()}>
               {hasSupabaseConfig() ? "Send magic link" : "Continue in demo mode"}
             </Button>
+            {__DEV__ && hasSupabaseConfig() ? (
+              <Text style={styles.muted}>Redirect: {getAuthRedirectUrl()}</Text>
+            ) : null}
           </Card>
         </View>
       </SafeAreaView>
@@ -283,6 +270,7 @@ export default function ScorerScreen() {
       />
       <ConfirmNewMatchModal
         open={newMatchOpen}
+        hasUnsavedMatch={saveState === "failed"}
         onClose={() => setNewMatchOpen(false)}
         onConfirm={() => {
           setNewMatchOpen(false);
@@ -326,6 +314,7 @@ export default function ScorerScreen() {
         opponentLegendId={opponentLegendId}
         notes={notes}
         saveStatus={saveStatus}
+        saveState={saveState}
         onPlayerLegendChange={setPlayerLegendId}
         onOpponentLegendChange={setOpponentLegendId}
         onNotesChange={setNotes}
@@ -606,10 +595,12 @@ function MatchSettingsModal({
 
 function ConfirmNewMatchModal({
   open,
+  hasUnsavedMatch,
   onClose,
   onConfirm
 }: {
   open: boolean;
+  hasUnsavedMatch: boolean;
   onClose: () => void;
   onConfirm: () => void;
 }) {
@@ -623,7 +614,11 @@ function ConfirmNewMatchModal({
         <Animated.View style={[styles.settingsSheet, getSheetAnimationStyle(sheetProgress)]}>
           <View style={styles.sheetHandle} />
           <Text style={styles.title}>Start new match?</Text>
-          <Text style={styles.muted}>This discards the current match and starts again at Game 1.</Text>
+          <Text style={styles.muted}>
+            {hasUnsavedMatch
+              ? "This match has not uploaded. Starting a new match discards this retryable result."
+              : "This discards the current match and starts again at Game 1."}
+          </Text>
           <Button variant="outline" onPress={onConfirm}>New match</Button>
           <Button onPress={onClose}>Cancel</Button>
         </Animated.View>
@@ -754,6 +749,7 @@ function ReviewModal({
   opponentLegendId,
   notes,
   saveStatus,
+  saveState,
   onPlayerLegendChange,
   onOpponentLegendChange,
   onNotesChange,
@@ -766,12 +762,22 @@ function ReviewModal({
   opponentLegendId: string;
   notes: string;
   saveStatus: string;
+  saveState: "idle" | "saving" | "saved" | "failed";
   onPlayerLegendChange: (id: string) => void;
   onOpponentLegendChange: (id: string) => void;
   onNotesChange: (notes: string) => void;
   onSave: () => void;
   onReset: () => void;
 }) {
+  const saveButtonLabel =
+    saveState === "saving"
+      ? "Saving..."
+      : saveState === "failed"
+        ? "Try saving again"
+        : saveState === "saved"
+          ? "Saved"
+          : "Save match";
+
   return (
     <Modal visible={open} animationType="slide" transparent>
       <View style={styles.modalBackdrop}>
@@ -784,8 +790,12 @@ function ReviewModal({
             <LegendPicker label="Your legend" value={playerLegendId} onChange={onPlayerLegendChange} />
             <LegendPicker label="Opponent legend" value={opponentLegendId} onChange={onOpponentLegendChange} />
             <Field value={notes} onChangeText={onNotesChange} placeholder="Match notes" multiline />
-            <Button onPress={onSave}>Save match</Button>
-            <Button variant="outline" onPress={onReset}>Finish without saving</Button>
+            <Button onPress={onSave} disabled={saveState === "saving" || saveState === "saved"}>
+              {saveButtonLabel}
+            </Button>
+            <Button variant="outline" onPress={onReset}>
+              {saveState === "saved" ? "Finish" : "Finish without saving"}
+            </Button>
             {saveStatus ? <Text style={styles.muted}>{saveStatus}</Text> : null}
           </Card>
         </ScrollView>

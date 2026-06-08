@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Linking } from "react-native";
 import type { User } from "@supabase/supabase-js";
-import { getMobileSupabase, hasSupabaseConfig } from "@/lib/supabase";
+import { getAuthRedirectUrl, getMobileSupabase, hasSupabaseConfig } from "@/lib/supabase";
 
 type SessionContextValue = {
   email: string;
@@ -26,8 +27,36 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
+    const handleUrl = async (url: string | null) => {
+      if (!url) return;
 
-    return () => data.subscription.unsubscribe();
+      const params = getAuthParamsFromUrl(url);
+      if (params.error) {
+        console.warn("Supabase auth redirect failed:", params.error);
+        return;
+      }
+
+      if (!params.accessToken || !params.refreshToken) return;
+
+      const { error } = await supabase.auth.setSession({
+        access_token: params.accessToken,
+        refresh_token: params.refreshToken
+      });
+
+      if (error) {
+        console.warn("Could not restore Supabase session from redirect:", error.message);
+      }
+    };
+    const subscription = Linking.addEventListener("url", (event) => {
+      handleUrl(event.url);
+    });
+
+    Linking.getInitialURL().then(handleUrl);
+
+    return () => {
+      data.subscription.unsubscribe();
+      subscription.remove();
+    };
   }, []);
 
   const value = useMemo<SessionContextValue>(
@@ -43,7 +72,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         }
 
         const supabase = getMobileSupabase();
-        const { error } = await supabase.auth.signInWithOtp({ email });
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            emailRedirectTo: getAuthRedirectUrl()
+          }
+        });
         return { error: error?.message };
       },
       async signOut() {
@@ -68,4 +102,15 @@ export function useSession() {
   }
 
   return context;
+}
+
+function getAuthParamsFromUrl(url: string) {
+  const paramsText = url.includes("#") ? url.split("#")[1] : url.split("?")[1];
+  const params = new URLSearchParams(paramsText ?? "");
+
+  return {
+    accessToken: params.get("access_token"),
+    refreshToken: params.get("refresh_token"),
+    error: params.get("error_description") ?? params.get("error")
+  };
 }

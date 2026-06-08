@@ -2,17 +2,15 @@ import { useCallback, useEffect, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { getLegendById } from "@riftbound/legends";
+import { listSavedMatches, type SavedMatchSummary } from "@riftbound/db";
 import { MenuScreen } from "@/components/bottom-menu";
 import { getMobileSupabase, hasSupabaseConfig } from "@/lib/supabase";
 import { useSession } from "@/lib/session";
 import { colors, radius } from "@/lib/theme";
-import type { Database } from "@riftbound/db";
-
-type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
 
 export default function MatchesScreen() {
   const session = useSession();
-  const [matches, setMatches] = useState<MatchRow[]>([]);
+  const [matches, setMatches] = useState<SavedMatchSummary[]>([]);
   const [status, setStatus] = useState("");
   const [refreshing, setRefreshing] = useState(false);
 
@@ -29,10 +27,7 @@ export default function MatchesScreen() {
       return;
     }
 
-    const { data, error } = await getMobileSupabase()
-      .from("matches")
-      .select("*")
-      .order("played_at", { ascending: false });
+    const { data, error } = await listSavedMatches(getMobileSupabase());
 
     if (error) {
       setStatus(error.message);
@@ -78,6 +73,9 @@ export default function MatchesScreen() {
               {getLegendById(match.player_legend_id)?.name ?? match.player_legend_id} vs{" "}
               {getLegendById(match.opponent_legend_id)?.name ?? match.opponent_legend_id}
             </Text>
+            {match.duration_seconds !== null ? (
+              <Text style={styles.notes}>Duration {formatElapsed(match.duration_seconds)}</Text>
+            ) : null}
             {match.notes ? <Text style={styles.notes} numberOfLines={2}>{match.notes}</Text> : null}
           </View>
         ))}
@@ -130,8 +128,14 @@ const styles = StyleSheet.create({
   }
 });
 
-function getMatchResultLabel(winner: MatchRow["winner"]) {
+function getMatchResultLabel(winner: SavedMatchSummary["winner"]) {
   if (winner === "player") return "Win";
   if (winner === "opponent") return "Loss";
   return "Tie";
+}
+
+function formatElapsed(seconds: number) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 }
