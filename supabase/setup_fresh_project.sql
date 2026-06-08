@@ -1,7 +1,7 @@
 create extension if not exists pgcrypto with schema extensions;
 
 create table public.profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
+  id text primary key,
   email text,
   created_at timestamptz not null default now()
 );
@@ -14,7 +14,7 @@ create table public.legends (
 
 create table public.matches (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
+  user_id text not null,
   player_legend_id text not null references public.legends(id),
   opponent_legend_id text not null references public.legends(id),
   notes text,
@@ -68,26 +68,29 @@ alter table public.score_events enable row level security;
 alter table public.legends enable row level security;
 
 create policy "Users can read their profile"
-  on public.profiles for select using (auth.uid() = id);
+  on public.profiles for select using ((auth.jwt()->>'sub') = id);
 
 create policy "Users can update their profile"
-  on public.profiles for update using (auth.uid() = id);
+  on public.profiles for update using ((auth.jwt()->>'sub') = id);
+
+create policy "Users can insert their profile"
+  on public.profiles for insert with check ((auth.jwt()->>'sub') = id);
 
 create policy "Users can read legends"
   on public.legends for select using (true);
 
 create policy "Users can read own matches"
-  on public.matches for select using (auth.uid() = user_id);
+  on public.matches for select using ((auth.jwt()->>'sub') = user_id);
 
 create policy "Users can insert own matches"
-  on public.matches for insert with check (auth.uid() = user_id);
+  on public.matches for insert with check ((auth.jwt()->>'sub') = user_id);
 
 create policy "Users can read own games"
   on public.games for select using (
     exists (
       select 1 from public.matches
       where matches.id = games.match_id
-      and matches.user_id = auth.uid()
+      and matches.user_id = (auth.jwt()->>'sub')
     )
   );
 
@@ -96,7 +99,7 @@ create policy "Users can insert own games"
     exists (
       select 1 from public.matches
       where matches.id = games.match_id
-      and matches.user_id = auth.uid()
+      and matches.user_id = (auth.jwt()->>'sub')
     )
   );
 
@@ -106,7 +109,7 @@ create policy "Users can read own score events"
       select 1 from public.games
       join public.matches on matches.id = games.match_id
       where games.id = score_events.game_id
-      and matches.user_id = auth.uid()
+      and matches.user_id = (auth.jwt()->>'sub')
     )
   );
 
@@ -116,26 +119,9 @@ create policy "Users can insert own score events"
       select 1 from public.games
       join public.matches on matches.id = games.match_id
       where games.id = score_events.game_id
-      and matches.user_id = auth.uid()
+      and matches.user_id = (auth.jwt()->>'sub')
     )
   );
-
-create function public.handle_new_user()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  insert into public.profiles (id, email)
-  values (new.id, new.email);
-  return new;
-end;
-$$;
-
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute procedure public.handle_new_user();
 
 insert into public.legends (id, name, set_name) values
   ('ahri', 'Ahri', 'Origins'),

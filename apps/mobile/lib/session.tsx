@@ -1,94 +1,39 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Linking } from "react-native";
-import type { User } from "@supabase/supabase-js";
-import { getAuthRedirectUrl, getMobileSupabase, hasSupabaseConfig } from "@/lib/supabase";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
+import { useAuth, useUser } from "@clerk/expo";
+
+type AppUser = {
+  id: string;
+  email: string | null;
+};
 
 type SessionContextValue = {
-  email: string;
-  setEmail: (email: string) => void;
+  isLoaded: boolean;
   isSignedIn: boolean;
-  user: User | null;
-  signIn: () => Promise<{ error?: string; demo?: boolean }>;
+  user: AppUser | null;
+  getSupabaseAccessToken: () => Promise<string | null>;
   signOut: () => Promise<void>;
 };
 
 const SessionContext = createContext<SessionContextValue | undefined>(undefined);
 
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const [email, setEmail] = useState("");
-  const [user, setUser] = useState<User | null>(null);
-  const [demoSignedIn, setDemoSignedIn] = useState(false);
-
-  useEffect(() => {
-    if (!hasSupabaseConfig()) return;
-
-    const supabase = getMobileSupabase();
-    supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null));
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-    const handleUrl = async (url: string | null) => {
-      if (!url) return;
-
-      const params = getAuthParamsFromUrl(url);
-      if (params.error) {
-        console.warn("Supabase auth redirect failed:", params.error);
-        return;
-      }
-
-      if (!params.accessToken || !params.refreshToken) return;
-
-      const { error } = await supabase.auth.setSession({
-        access_token: params.accessToken,
-        refresh_token: params.refreshToken
-      });
-
-      if (error) {
-        console.warn("Could not restore Supabase session from redirect:", error.message);
-      }
-    };
-    const subscription = Linking.addEventListener("url", (event) => {
-      handleUrl(event.url);
-    });
-
-    Linking.getInitialURL().then(handleUrl);
-
-    return () => {
-      data.subscription.unsubscribe();
-      subscription.remove();
-    };
-  }, []);
+  const { getToken, isLoaded: authLoaded, isSignedIn, signOut } = useAuth();
+  const { user, isLoaded: userLoaded } = useUser();
 
   const value = useMemo<SessionContextValue>(
     () => ({
-      email,
-      setEmail,
-      user,
-      isSignedIn: hasSupabaseConfig() ? Boolean(user) : demoSignedIn,
-      async signIn() {
-        if (!hasSupabaseConfig()) {
-          setDemoSignedIn(true);
-          return { demo: true };
-        }
-
-        const supabase = getMobileSupabase();
-        const { error } = await supabase.auth.signInWithOtp({
-          email,
-          options: {
-            emailRedirectTo: getAuthRedirectUrl()
+      isLoaded: authLoaded && userLoaded,
+      isSignedIn: Boolean(isSignedIn),
+      user: user
+        ? {
+            id: user.id,
+            email: user.primaryEmailAddress?.emailAddress ?? null
           }
-        });
-        return { error: error?.message };
-      },
-      async signOut() {
-        if (hasSupabaseConfig()) {
-          await getMobileSupabase().auth.signOut();
-        }
-        setUser(null);
-        setDemoSignedIn(false);
-      }
+        : null,
+      getSupabaseAccessToken: () => getToken(),
+      signOut
     }),
-    [demoSignedIn, email, user]
+    [authLoaded, getToken, isSignedIn, signOut, user, userLoaded]
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
@@ -102,15 +47,4 @@ export function useSession() {
   }
 
   return context;
-}
-
-function getAuthParamsFromUrl(url: string) {
-  const paramsText = url.includes("#") ? url.split("#")[1] : url.split("?")[1];
-  const params = new URLSearchParams(paramsText ?? "");
-
-  return {
-    accessToken: params.get("access_token"),
-    refreshToken: params.get("refresh_token"),
-    error: params.get("error_description") ?? params.get("error")
-  };
 }

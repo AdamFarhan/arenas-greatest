@@ -16,7 +16,7 @@ export default function MatchesScreen() {
 
   const loadMatches = useCallback(async () => {
     if (!hasSupabaseConfig()) {
-      setStatus("Demo mode is active. Add Supabase env vars to load saved matches.");
+      setStatus("Cloud history is unavailable until Supabase environment variables are configured.");
       setMatches([]);
       return;
     }
@@ -27,7 +27,7 @@ export default function MatchesScreen() {
       return;
     }
 
-    const { data, error } = await listSavedMatches(getMobileSupabase());
+    const { data, error } = await listSavedMatches(getMobileSupabase(session.getSupabaseAccessToken));
 
     if (error) {
       setStatus(error.message);
@@ -36,7 +36,7 @@ export default function MatchesScreen() {
 
     setMatches(data ?? []);
     setStatus(data?.length ? "" : "No saved matches yet.");
-  }, [session.isSignedIn]);
+  }, [session.getSupabaseAccessToken, session.isSignedIn]);
 
   useEffect(() => {
     loadMatches();

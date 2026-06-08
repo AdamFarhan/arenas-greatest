@@ -8,8 +8,13 @@
     "backgroundColor": "#0a0a0a",
     "userInterfaceStyle": "dark",
     "android": {
+      "package": "com.arenasgreatest.app",
       "backgroundColor": "#0a0a0a"
     },
-    "plugins": ["expo-router", "expo-secure-store"]
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "@clerk/expo"
+    ]
   }
 }

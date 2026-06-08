@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { AuthView } from "@clerk/expo/native";
 import {
   Alert,
   Animated,
@@ -26,7 +27,7 @@ import { buildCompletedMatchPayload, saveCompletedMatch } from "@riftbound/db";
 import { LEGENDS } from "@riftbound/legends";
 import { BottomMenu } from "@/components/bottom-menu";
 import { Button, Card, Field } from "@/components/primitives";
-import { getAuthRedirectUrl, getMobileSupabase, hasSupabaseConfig } from "@/lib/supabase";
+import { getMobileSupabase, hasSupabaseConfig } from "@/lib/supabase";
 import { useMatchState, type SetupDraft } from "@/lib/match-state";
 import { useSession } from "@/lib/session";
 import { colors, radius } from "@/lib/theme";
@@ -85,14 +86,6 @@ export default function ScorerScreen() {
     }
   }, [match]);
 
-  async function signIn() {
-    const result = await session.signIn();
-    Alert.alert(
-      result.error ? "Sign in failed" : result.demo ? "Demo mode" : "Check your email",
-      result.error ?? (result.demo ? "Cloud saving is disabled until Supabase env vars are configured." : "Open the magic link to continue.")
-    );
-  }
-
   function confirmGameSetup() {
     setMatch((current) => startGame(current, setupDraft.startingPlayer, setupDraft.winningPoint));
     setSetupOpen(false);
@@ -134,9 +127,7 @@ export default function ScorerScreen() {
     setSaveState("saving");
     setSaveStatus("Saving match...");
 
-    const supabase = getMobileSupabase();
-    const { data: userData } = await supabase.auth.getUser();
-    const userId = userData.user?.id;
+    const userId = session.user?.id;
 
     if (!userId) {
       setSaveState("failed");
@@ -145,6 +136,19 @@ export default function ScorerScreen() {
       return false;
     }
 
+    const tokenResult = await session.getSupabaseAccessToken().then(
+      (token) => ({ token, error: null }),
+      (error: unknown) => ({ token: null, error: toError(error, "Could not get account token.") })
+    );
+
+    if (tokenResult.error) {
+      setSaveState("failed");
+      setSaveStatus("Save failed while preparing your account session.");
+      Alert.alert("Save failed", getErrorDetail(tokenResult.error));
+      return false;
+    }
+
+    const supabase = getMobileSupabase(tokenResult.token);
     const payload = buildCompletedMatchPayload(match, {
       userId,
       playerLegendId,
@@ -155,12 +159,15 @@ export default function ScorerScreen() {
       durationSeconds: elapsedSeconds
     });
 
-    const { error } = await saveCompletedMatch(supabase, payload);
+    const { error } = await saveCompletedMatch(supabase, payload).catch((error: unknown) => ({
+      data: null,
+      error: toError(error, "Could not save match.")
+    }));
 
     if (error) {
       setSaveState("failed");
       setSaveStatus("Save failed. Keep this screen open and try again when you have service.");
-      Alert.alert("Save failed", error.message);
+      Alert.alert("Save failed", getErrorDetail(error));
       return false;
     }
 
@@ -169,29 +176,24 @@ export default function ScorerScreen() {
     return true;
   }
 
-  if (!session.isSignedIn) {
+  if (!session.isLoaded) {
     return (
       <SafeAreaView style={styles.screen}>
         <View style={styles.centered}>
           <Card>
             <Text style={styles.title}>Riftbound Tracker</Text>
-            <Text style={styles.muted}>Sign in to save match history to your account.</Text>
-            <Field
-              value={session.email}
-              onChangeText={session.setEmail}
-              placeholder="you@example.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-              textContentType="emailAddress"
-            />
-            <Button onPress={signIn} disabled={!session.email && hasSupabaseConfig()}>
-              {hasSupabaseConfig() ? "Send magic link" : "Continue in demo mode"}
-            </Button>
-            {__DEV__ && hasSupabaseConfig() ? (
-              <Text style={styles.muted}>Redirect: {getAuthRedirectUrl()}</Text>
-            ) : null}
+            <Text style={styles.muted}>Loading account...</Text>
           </Card>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!session.isSignedIn) {
+    return (
+      <SafeAreaView style={styles.screen}>
+        <View style={styles.authView}>
+          <AuthView mode="signInOrUp" />
         </View>
       </SafeAreaView>
     );
@@ -324,6 +326,18 @@ export default function ScorerScreen() {
       <BottomMenu />
     </SafeAreaView>
   );
+}
+
+function toError(error: unknown, fallbackMessage = "Could not save match.") {
+  if (error instanceof Error) {
+    return error;
+  }
+
+  return new Error(typeof error === "string" ? error : fallbackMessage);
+}
+
+function getErrorDetail(error: Error) {
+  return __DEV__ && error.stack ? error.stack : error.message;
 }
 
 function PlayerPanel({
@@ -919,6 +933,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 16,
     paddingBottom: 112
+  },
+  authView: {
+    flex: 1
   },
   scoreboard: {
     flex: 1,

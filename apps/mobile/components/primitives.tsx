@@ -20,7 +20,7 @@ export function Button({
   return (
     <Pressable
       disabled={disabled}
-      onPress={onPress}
+      onPress={() => onPress()}
       style={({ pressed }) => [
         styles.button,
         styles[variant],

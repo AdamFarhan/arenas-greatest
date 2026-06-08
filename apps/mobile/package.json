@@ -5,17 +5,21 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "ios": "expo start --ios",
-    "android": "expo start --android",
+    "ios": "expo run:ios",
+    "android": "expo run:android",
+    "android:dev-build": "expo run:android",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@clerk/expo": "^3.3.1",
     "@expo/vector-icons": "^15.1.1",
     "@riftbound/core": "0.1.0",
     "@riftbound/db": "0.1.0",
     "@riftbound/legends": "0.1.0",
     "@supabase/supabase-js": "^2.48.1",
     "expo": "~54.0.0",
+    "expo-dev-client": "~6.0.21",
+    "expo-font": "~14.0.12",
     "expo-router": "~6.0.15",
     "expo-secure-store": "~15.0.7",
     "react": "19.1.0",
