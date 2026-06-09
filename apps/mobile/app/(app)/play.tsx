@@ -29,6 +29,7 @@ import { BottomMenu } from "@/components/bottom-menu";
 import { Button, Card, Field } from "@/components/primitives";
 import { getMobileSupabase, hasSupabaseConfig } from "@/lib/supabase";
 import { useMatchState, type SetupDraft } from "@/lib/match-state";
+import { useSavedMatches } from "@/lib/saved-matches";
 import { useSession } from "@/lib/session";
 import { colors, radius } from "@/lib/theme";
 
@@ -37,6 +38,7 @@ type MatchResult = PlayerSide | "tie";
 export default function ScorerScreen() {
   const router = useRouter();
   const session = useSession();
+  const { upsertCachedMatch } = useSavedMatches();
   const {
     match,
     setMatch,
@@ -168,24 +170,25 @@ export default function ScorerScreen() {
       durationSeconds: elapsedSeconds,
     });
 
-    const { error } = await saveCompletedMatch(supabase, payload).catch(
+    const { data: savedMatch, error } = await saveCompletedMatch(supabase, payload).catch(
       (error: unknown) => ({
         data: null,
         error: toError(error, "Could not save match."),
       }),
     );
 
-    if (error) {
+    if (error || !savedMatch) {
       setSaveState("failed");
       setSaveStatus(
         "Save failed. Keep this screen open and try again when you have service.",
       );
-      Alert.alert("Save failed", getErrorDetail(error));
+      Alert.alert("Save failed", getErrorDetail(error ?? new Error("Could not save match.")));
       return false;
     }
 
     setSaveState("saved");
     setSaveStatus("Match saved.");
+    upsertCachedMatch(savedMatch);
     return true;
   }
 

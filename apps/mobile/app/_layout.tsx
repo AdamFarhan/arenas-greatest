@@ -3,6 +3,7 @@ import { ClerkProvider } from "@clerk/expo";
 import { DarkTheme, ThemeProvider } from "@react-navigation/native";
 import { useCallback, useMemo, useState } from "react";
 import { MatchProvider } from "@/lib/match-state";
+import { SavedMatchesProvider } from "@/lib/saved-matches";
 import { SessionProvider } from "@/lib/session";
 import { clearClerkClientToken, clerkTokenCache } from "@/lib/clerk-token-cache";
 import { ClerkRecoveryProvider } from "@/lib/clerk-recovery";
@@ -50,17 +51,19 @@ export default function RootLayout() {
       <ClerkProvider key={clerkProviderKey} publishableKey={clerkPublishableKey} tokenCache={clerkTokenCache}>
         <ThemeProvider value={navigationTheme}>
           <SessionProvider>
-            <MatchProvider>
-              <Stack
-                screenOptions={{
-                  animation: "none",
-                  contentStyle: {
-                    backgroundColor: colors.background
-                  },
-                  headerShown: false
-                }}
-              />
-            </MatchProvider>
+            <SavedMatchesProvider>
+              <MatchProvider>
+                <Stack
+                  screenOptions={{
+                    animation: "none",
+                    contentStyle: {
+                      backgroundColor: colors.background
+                    },
+                    headerShown: false
+                  }}
+                />
+              </MatchProvider>
+            </SavedMatchesProvider>
           </SessionProvider>
         </ThemeProvider>
       </ClerkProvider>

@@ -1,56 +1,22 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
-import { useFocusEffect } from "expo-router";
 import { getLegendById } from "@riftbound/legends";
-import { listSavedMatches, type SavedMatchSummary } from "@riftbound/db";
+import type { SavedMatchSummary } from "@riftbound/db";
 import { MenuScreen } from "@/components/bottom-menu";
-import { getMobileSupabase, hasSupabaseConfig } from "@/lib/supabase";
-import { useSession } from "@/lib/session";
+import { useSavedMatches } from "@/lib/saved-matches";
 import { colors, radius } from "@/lib/theme";
 
 export default function MatchesScreen() {
-  const session = useSession();
-  const [matches, setMatches] = useState<SavedMatchSummary[]>([]);
-  const [status, setStatus] = useState("");
+  const { matches, status, loadMatchesIfNeeded, refreshMatches } = useSavedMatches();
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadMatches = useCallback(async () => {
-    if (!hasSupabaseConfig()) {
-      setStatus("Cloud history is unavailable until Supabase environment variables are configured.");
-      setMatches([]);
-      return;
-    }
-
-    if (!session.isSignedIn) {
-      setStatus("Sign in to view saved matches.");
-      setMatches([]);
-      return;
-    }
-
-    const { data, error } = await listSavedMatches(getMobileSupabase(session.getSupabaseAccessToken));
-
-    if (error) {
-      setStatus(error.message);
-      return;
-    }
-
-    setMatches(data ?? []);
-    setStatus(data?.length ? "" : "No saved matches yet.");
-  }, [session.getSupabaseAccessToken, session.isSignedIn]);
-
   useEffect(() => {
-    loadMatches();
-  }, [loadMatches]);
-
-  useFocusEffect(
-    useCallback(() => {
-      loadMatches();
-    }, [loadMatches])
-  );
+    loadMatchesIfNeeded();
+  }, [loadMatchesIfNeeded]);
 
   async function refresh() {
     setRefreshing(true);
-    await loadMatches();
+    await refreshMatches();
     setRefreshing(false);
   }
 

@@ -58,6 +58,11 @@ export type CompletedMatchPayload = {
 
 export type SavedMatchSummary = Database["public"]["Tables"]["matches"]["Row"];
 
+export type SaveCompletedMatchResult = {
+  data: SavedMatchSummary | null;
+  error: Error | null;
+};
+
 export type SavedMatchDetail = SavedMatchSummary & {
   games: Array<Database["public"]["Tables"]["games"]["Row"] & {
     events: Database["public"]["Tables"]["score_events"]["Row"][];
@@ -115,16 +120,18 @@ export function buildCompletedMatchPayload(
 export async function saveCompletedMatch(
   supabase: SupabaseClient,
   payload: CompletedMatchPayload
-) {
+): Promise<SaveCompletedMatchResult> {
   const matchMutation = payload.match.id
     ? supabase.from("matches").upsert(payload.match, { onConflict: "id" })
     : supabase.from("matches").insert(payload.match);
 
-  const { data: insertedMatch, error: matchError } = await matchMutation.select("id").single();
+  const { data: insertedMatch, error: matchError } = await matchMutation.select("*").single();
 
   if (matchError || !insertedMatch) {
-    return { data: null, error: matchError ?? new Error("Could not create match.") };
+    return { data: null, error: toDbError(matchError, "Could not create match.") };
   }
+
+  const savedMatch = insertedMatch as SavedMatchSummary;
 
   for (const gamePayload of payload.games) {
     const gameInsert = {
@@ -138,7 +145,7 @@ export async function saveCompletedMatch(
       .single();
 
     if (gameError || !insertedGame) {
-      return { data: null, error: gameError ?? new Error("Could not create game.") };
+      return { data: null, error: toDbError(gameError, "Could not create game.") };
     }
 
     if (gamePayload.events.length) {
@@ -152,12 +159,12 @@ export async function saveCompletedMatch(
       const { error: eventsError } = await eventsMutation;
 
       if (eventsError) {
-        return { data: null, error: eventsError };
+        return { data: null, error: toDbError(eventsError, "Could not create score events.") };
       }
     }
   }
 
-  return { data: { id: insertedMatch.id }, error: null };
+  return { data: savedMatch, error: null };
 }
 
 export async function listSavedMatches(supabase: SupabaseClient) {
@@ -218,6 +225,18 @@ export async function getSavedMatch(supabase: SupabaseClient, id: string) {
 
 function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+function toDbError(error: unknown, fallbackMessage: string) {
+  if (error instanceof Error) {
+    return error;
+  }
+
+  if (error && typeof error === "object" && "message" in error && typeof error.message === "string") {
+    return new Error(error.message);
+  }
+
+  return new Error(fallbackMessage);
 }
 
 function buildScoreEventInsert(
