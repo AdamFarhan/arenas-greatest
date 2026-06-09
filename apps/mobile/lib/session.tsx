@@ -22,7 +22,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<SessionContextValue>(
     () => ({
-      isLoaded: authLoaded && userLoaded,
+      isLoaded: authLoaded && (!isSignedIn || userLoaded),
       isSignedIn: Boolean(isSignedIn),
       user: user
         ? {

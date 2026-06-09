@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import { AuthView } from "@clerk/expo/native";
 import {
   Alert,
   Animated,
@@ -174,29 +173,6 @@ export default function ScorerScreen() {
     setSaveState("saved");
     setSaveStatus("Match saved.");
     return true;
-  }
-
-  if (!session.isLoaded) {
-    return (
-      <SafeAreaView style={styles.screen}>
-        <View style={styles.centered}>
-          <Card>
-            <Text style={styles.title}>Riftbound Tracker</Text>
-            <Text style={styles.muted}>Loading account...</Text>
-          </Card>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (!session.isSignedIn) {
-    return (
-      <SafeAreaView style={styles.screen}>
-        <View style={styles.authView}>
-          <AuthView mode="signInOrUp" />
-        </View>
-      </SafeAreaView>
-    );
   }
 
   return (

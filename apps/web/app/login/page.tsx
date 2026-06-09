@@ -32,7 +32,7 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center px-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Riftbound Tracker</CardTitle>
+          <CardTitle>The Arena's Greatest</CardTitle>
           <CardDescription>Sign in to review match data collected from your phone.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

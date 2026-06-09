@@ -1,6 +1,6 @@
 # Supabase Setup
 
-This folder contains the SQL needed to create the Riftbound Tracker database.
+This folder contains the SQL needed to create the database for The Arena's Greatest.
 
 ## Fresh hosted project
 

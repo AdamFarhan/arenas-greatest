@@ -1,9 +1,10 @@
 import { useUserProfileModal } from "@clerk/expo";
 import { useRouter } from "expo-router";
-import { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { MenuScreen } from "@/components/bottom-menu";
 import { Button } from "@/components/primitives";
+import { useClerkRecovery } from "@/lib/clerk-recovery";
+import { hasNativeClerkSession } from "@/lib/clerk-native-session";
 import { hasSupabaseConfig } from "@/lib/supabase";
 import { useSession } from "@/lib/session";
 import { colors, radius } from "@/lib/theme";
@@ -11,21 +12,22 @@ import { colors, radius } from "@/lib/theme";
 export default function ProfileScreen() {
   const router = useRouter();
   const session = useSession();
+  const { requestClerkRecovery } = useClerkRecovery();
   const { isAvailable: profileModalAvailable, presentUserProfile } = useUserProfileModal();
-
-  useEffect(() => {
-    if (session.isLoaded && !session.isSignedIn) {
-      router.replace("/play");
-    }
-  }, [router, session.isLoaded, session.isSignedIn]);
 
   async function manageAccount() {
     await presentUserProfile();
+    const hasNativeSession = await hasNativeClerkSession().catch(() => true);
+
+    if (!hasNativeSession) {
+      requestClerkRecovery();
+      router.replace("/login");
+    }
   }
 
   async function signOut() {
     await session.signOut();
-    router.replace("/play");
+    router.replace("/login");
   }
 
   return (

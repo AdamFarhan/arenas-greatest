@@ -3,7 +3,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
-  title: "Riftbound Tracker",
+  title: "The Arena's Greatest",
   description: "Track Riftbound matches, notes, legends, and scoring history."
 };
 

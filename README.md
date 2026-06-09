@@ -1,6 +1,6 @@
-# Riftbound Tracker
+# The Arena's Greatest
 
-A greenfield Riftbound score tracker with an Expo mobile app, a Next.js web dashboard, shared TypeScript match logic, seeded legend data, and Supabase persistence.
+A Riftbound match tracker with an Expo mobile app, a Next.js web dashboard, shared TypeScript match logic, seeded legend data, and Supabase persistence.
 
 ## Structure
 
