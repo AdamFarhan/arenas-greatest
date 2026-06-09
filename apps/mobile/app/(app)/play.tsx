@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { useRouter } from "expo-router";
 import {
   Alert,
   Animated,
@@ -9,7 +10,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  View
+  View,
 } from "react-native";
 import {
   addScore,
@@ -20,7 +21,7 @@ import {
   type MatchState,
   type PlayerSide,
   type ScoreEventType,
-  type ScoreReason
+  type ScoreReason,
 } from "@riftbound/core";
 import { buildCompletedMatchPayload, saveCompletedMatch } from "@riftbound/db";
 import { LEGENDS } from "@riftbound/legends";
@@ -34,6 +35,7 @@ import { colors, radius } from "@/lib/theme";
 type MatchResult = PlayerSide | "tie";
 
 export default function ScorerScreen() {
+  const router = useRouter();
   const session = useSession();
   const {
     match,
@@ -56,11 +58,10 @@ export default function ScorerScreen() {
     setNotes,
     saveState,
     setSaveState,
-    saveStatus,
     setSaveStatus,
     elapsedSeconds,
     matchStartedAt,
-    resetMatch
+    resetMatch,
   } = useMatchState();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [newMatchOpen, setNewMatchOpen] = useState(false);
@@ -86,7 +87,9 @@ export default function ScorerScreen() {
   }, [match]);
 
   function confirmGameSetup() {
-    setMatch((current) => startGame(current, setupDraft.startingPlayer, setupDraft.winningPoint));
+    setMatch((current) =>
+      startGame(current, setupDraft.startingPlayer, setupDraft.winningPoint),
+    );
     setSetupOpen(false);
   }
 
@@ -95,7 +98,9 @@ export default function ScorerScreen() {
   }
 
   function adjustScore(player: PlayerSide, nextScore: number) {
-    setMatch((current) => manuallyAdjustScore(current, player, Math.max(0, nextScore)));
+    setMatch((current) =>
+      manuallyAdjustScore(current, player, Math.max(0, nextScore)),
+    );
   }
 
   async function saveMatch(result: MatchResult | undefined = match.winner) {
@@ -119,7 +124,9 @@ export default function ScorerScreen() {
 
     if (!hasSupabaseConfig()) {
       setSaveState("failed");
-      setSaveStatus("Cloud save is unavailable until Supabase env vars are configured.");
+      setSaveStatus(
+        "Cloud save is unavailable until Supabase env vars are configured.",
+      );
       return false;
     }
 
@@ -137,7 +144,10 @@ export default function ScorerScreen() {
 
     const tokenResult = await session.getSupabaseAccessToken().then(
       (token) => ({ token, error: null }),
-      (error: unknown) => ({ token: null, error: toError(error, "Could not get account token.") })
+      (error: unknown) => ({
+        token: null,
+        error: toError(error, "Could not get account token."),
+      }),
     );
 
     if (tokenResult.error) {
@@ -155,17 +165,21 @@ export default function ScorerScreen() {
       notes,
       winner: result,
       playedAt: matchStartedAt ?? new Date().toISOString(),
-      durationSeconds: elapsedSeconds
+      durationSeconds: elapsedSeconds,
     });
 
-    const { error } = await saveCompletedMatch(supabase, payload).catch((error: unknown) => ({
-      data: null,
-      error: toError(error, "Could not save match.")
-    }));
+    const { error } = await saveCompletedMatch(supabase, payload).catch(
+      (error: unknown) => ({
+        data: null,
+        error: toError(error, "Could not save match."),
+      }),
+    );
 
     if (error) {
       setSaveState("failed");
-      setSaveStatus("Save failed. Keep this screen open and try again when you have service.");
+      setSaveStatus(
+        "Save failed. Keep this screen open and try again when you have service.",
+      );
       Alert.alert("Save failed", getErrorDetail(error));
       return false;
     }
@@ -173,6 +187,19 @@ export default function ScorerScreen() {
     setSaveState("saved");
     setSaveStatus("Match saved.");
     return true;
+  }
+
+  async function saveMatchAndReturnToPlay(
+    result: MatchResult | undefined = match.winner,
+    onSaved?: () => void,
+  ) {
+    const saved = await saveMatch(result);
+
+    if (saved) {
+      onSaved?.();
+      resetMatch();
+      router.replace("/play");
+    }
   }
 
   return (
@@ -189,25 +216,45 @@ export default function ScorerScreen() {
           />
 
           <View style={styles.matchBar}>
-            <Pressable style={styles.settingsButton} onPress={() => setSettingsOpen(true)}>
-              <MaterialCommunityIcons name="cog" size={22} color={colors.cardForeground} />
+            <Pressable
+              style={styles.settingsButton}
+              onPress={() => setSettingsOpen(true)}
+            >
+              <MaterialCommunityIcons
+                name="cog"
+                size={22}
+                color={colors.cardForeground}
+              />
             </Pressable>
             {isBetweenGames ? (
-              <Pressable style={styles.nextGameButton} onPress={() => setSetupOpen(true)}>
+              <Pressable
+                style={styles.nextGameButton}
+                onPress={() => setSetupOpen(true)}
+              >
                 <Text style={styles.nextGameButtonText}>Start next game</Text>
               </Pressable>
             ) : (
               <View style={styles.statusPill}>
                 <View style={styles.timerRow}>
-                  <MaterialCommunityIcons name="timer-outline" size={16} color={colors.primary} />
-                  <Text style={styles.timerText}>{formatElapsed(elapsedSeconds)}</Text>
+                  <MaterialCommunityIcons
+                    name="timer-outline"
+                    size={16}
+                    color={colors.primary}
+                  />
+                  <Text style={styles.timerText}>
+                    {formatElapsed(elapsedSeconds)}
+                  </Text>
                 </View>
                 <Text style={styles.matchBarText}>
-                  Game {displayGame?.gameNumber ?? match.games.length + 1} · Match {match.wins.player}-{match.wins.opponent}
+                  Game {displayGame?.gameNumber ?? match.games.length + 1} ·
+                  Match {match.wins.player}-{match.wins.opponent}
                 </Text>
               </View>
             )}
-            <Pressable style={styles.historyButton} onPress={() => setHistoryOpen(true)}>
+            <Pressable
+              style={styles.historyButton}
+              onPress={() => setHistoryOpen(true)}
+            >
               <Text style={styles.historyButtonText}>History</Text>
             </Pressable>
           </View>
@@ -233,7 +280,11 @@ export default function ScorerScreen() {
         dismissible={!hasStartedMatch || isBetweenGames}
         gameNumber={match.games.length + 1}
       />
-      <HistoryModal open={historyOpen} onClose={() => setHistoryOpen(false)} match={match} />
+      <HistoryModal
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        match={match}
+      />
       <MatchSettingsModal
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
@@ -271,17 +322,17 @@ export default function ScorerScreen() {
           setManualEndOpen(false);
           resetMatch();
         }}
-        onSave={async () => {
-          const saved = await saveMatch(manualResult);
-          if (saved) {
-            setManualEndOpen(false);
-            resetMatch();
-          }
-        }}
+        onSave={() =>
+          saveMatchAndReturnToPlay(manualResult, () => setManualEndOpen(false))
+        }
       />
       <ManualEditModal
         player={manualEditPlayer}
-        activeScore={manualEditPlayer && displayGame ? displayGame.score[manualEditPlayer] : 0}
+        activeScore={
+          manualEditPlayer && displayGame
+            ? displayGame.score[manualEditPlayer]
+            : 0
+        }
         onClose={() => setManualEditPlayer(null)}
         onAdjust={(player, scoreValue) => adjustScore(player, scoreValue)}
       />
@@ -291,12 +342,11 @@ export default function ScorerScreen() {
         playerLegendId={playerLegendId}
         opponentLegendId={opponentLegendId}
         notes={notes}
-        saveStatus={saveStatus}
         saveState={saveState}
         onPlayerLegendChange={setPlayerLegendId}
         onOpponentLegendChange={setOpponentLegendId}
         onNotesChange={setNotes}
-        onSave={saveMatch}
+        onSave={saveMatchAndReturnToPlay}
         onReset={resetMatch}
       />
       <BottomMenu />
@@ -322,7 +372,7 @@ function PlayerPanel({
   inverted = false,
   disabled,
   onScore,
-  onEdit
+  onEdit,
 }: {
   label: string;
   score: number;
@@ -337,19 +387,38 @@ function PlayerPanel({
     <View style={[styles.panel, inverted && styles.inverted]}>
       <View style={styles.playerHeader}>
         <Text style={styles.playerLabel}>{label}</Text>
-        {canEdit ? <Text style={styles.playerStatus}>Tap score to edit</Text> : null}
+        {canEdit ? (
+          <Text style={styles.playerStatus}>Tap score to edit</Text>
+        ) : null}
       </View>
       <View style={styles.playerMain}>
-        <Pressable onPress={onEdit} disabled={disabled} style={[styles.scorePad, disabled && styles.disabled]}>
+        <Pressable
+          onPress={onEdit}
+          disabled={disabled}
+          style={[styles.scorePad, disabled && styles.disabled]}
+        >
           <Text style={styles.score}>{score}</Text>
         </Pressable>
       </View>
       <View style={styles.scoreControls}>
         <View style={styles.primaryScoreActions}>
-          <ScoreButton reason="holding" onPress={() => onScore("holding")} disabled={disabled} />
-          <ScoreButton reason="conquering" onPress={() => onScore("conquering")} disabled={disabled} />
+          <ScoreButton
+            reason="holding"
+            onPress={() => onScore("holding")}
+            disabled={disabled}
+          />
+          <ScoreButton
+            reason="conquering"
+            onPress={() => onScore("conquering")}
+            disabled={disabled}
+          />
         </View>
-        <ScoreButton reason="ability" compact onPress={() => onScore("ability")} disabled={disabled} />
+        <ScoreButton
+          reason="ability"
+          compact
+          onPress={() => onScore("ability")}
+          disabled={disabled}
+        />
       </View>
     </View>
   );
@@ -359,9 +428,15 @@ function PlayEmptyState({ onStart }: { onStart: () => void }) {
   return (
     <View style={styles.emptyState}>
       <View style={styles.emptyCard}>
-        <MaterialCommunityIcons name="cards-playing-outline" size={40} color={colors.primary} />
+        <MaterialCommunityIcons
+          name="cards-playing-outline"
+          size={40}
+          color={colors.primary}
+        />
         <Text style={styles.emptyTitle}>Ready to play?</Text>
-        <Text style={styles.emptyText}>Start a best-of-3 Riftbound match when both players are ready.</Text>
+        <Text style={styles.emptyText}>
+          Start a best-of-3 match when both players are ready.
+        </Text>
         <Button onPress={onStart}>Start match</Button>
       </View>
     </View>
@@ -372,7 +447,7 @@ function ScoreButton({
   reason,
   compact = false,
   onPress,
-  disabled
+  disabled,
 }: {
   reason: ScoreReason;
   compact?: boolean;
@@ -386,7 +461,7 @@ function ScoreButton({
       style={[
         compact ? styles.compactScoreButton : styles.scoreButton,
         { borderColor: config.color },
-        disabled && styles.disabled
+        disabled && styles.disabled,
       ]}
       onPress={onPress}
       disabled={disabled}
@@ -396,7 +471,14 @@ function ScoreButton({
         size={compact ? 24 : 36}
         color={config.color}
       />
-      <Text style={[styles.scoreButtonText, compact && styles.compactScoreButtonText]}>{config.label}</Text>
+      <Text
+        style={[
+          styles.scoreButtonText,
+          compact && styles.compactScoreButtonText,
+        ]}
+      >
+        {config.label}
+      </Text>
     </Pressable>
   );
 }
@@ -408,7 +490,7 @@ function GameSetupModal({
   onChange,
   onConfirm,
   onClose,
-  dismissible
+  dismissible,
 }: {
   open: boolean;
   draft: SetupDraft;
@@ -424,20 +506,34 @@ function GameSetupModal({
   return (
     <Modal visible={visible} animationType="none" transparent>
       <Animated.View style={[styles.sheetBackdrop, { opacity: sheetProgress }]}>
-        {dismissible ? <Pressable style={StyleSheet.absoluteFill} onPress={onClose} /> : null}
-        <Animated.View style={[styles.gameSetupSheet, getSheetAnimationStyle(sheetProgress)]}>
+        {dismissible ? (
+          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        ) : null}
+        <Animated.View
+          style={[styles.gameSetupSheet, getSheetAnimationStyle(sheetProgress)]}
+        >
           <View style={styles.sheetHandle} />
           {dismissible ? (
             <Pressable style={styles.setupCloseButton} onPress={onClose}>
-              <MaterialCommunityIcons name="close" size={22} color={colors.cardForeground} />
+              <MaterialCommunityIcons
+                name="close"
+                size={22}
+                color={colors.cardForeground}
+              />
             </Pressable>
           ) : null}
           <View style={styles.setupHero}>
             <View style={styles.setupIcon}>
-              <MaterialCommunityIcons name="flag" size={28} color={colors.primary} />
+              <MaterialCommunityIcons
+                name="flag"
+                size={28}
+                color={colors.primary}
+              />
             </View>
             <Text style={styles.setupTitle}>Game {gameNumber} setup</Text>
-            <Text style={styles.setupSubtitle}>Choose the opener and the winning point.</Text>
+            <Text style={styles.setupSubtitle}>
+              Choose the opener and the winning point.
+            </Text>
           </View>
           <Text style={styles.sectionLabel}>Starting player</Text>
           <View style={styles.setupChoiceGrid}>
@@ -447,19 +543,36 @@ function GameSetupModal({
               return (
                 <Pressable
                   key={side}
-                  style={[styles.setupChoice, active && styles.setupChoiceActive]}
+                  style={[
+                    styles.setupChoice,
+                    active && styles.setupChoiceActive,
+                  ]}
                   onPress={() => onChange({ ...draft, startingPlayer: side })}
                 >
                   <MaterialCommunityIcons
                     name={side === "player" ? "account" : "account-group"}
                     size={30}
-                    color={active ? colors.primaryForeground : colors.mutedForeground}
+                    color={
+                      active ? colors.primaryForeground : colors.mutedForeground
+                    }
                   />
-                  <Text style={[styles.setupChoiceTitle, active && styles.setupChoiceTitleActive]}>
+                  <Text
+                    style={[
+                      styles.setupChoiceTitle,
+                      active && styles.setupChoiceTitleActive,
+                    ]}
+                  >
                     {side === "player" ? "You" : "Opponent"}
                   </Text>
-                  <Text style={[styles.setupChoiceText, active && styles.setupChoiceTextActive]}>
-                    {side === "player" ? "Take the first turn" : "Opponent starts"}
+                  <Text
+                    style={[
+                      styles.setupChoiceText,
+                      active && styles.setupChoiceTextActive,
+                    ]}
+                  >
+                    {side === "player"
+                      ? "Take the first turn"
+                      : "Opponent starts"}
                   </Text>
                 </Pressable>
               );
@@ -473,17 +586,31 @@ function GameSetupModal({
               return (
                 <Pressable
                   key={point}
-                  style={[styles.pointButton, active && styles.pointButtonActive]}
+                  style={[
+                    styles.pointButton,
+                    active && styles.pointButtonActive,
+                  ]}
                   onPress={() => onChange({ ...draft, winningPoint: point })}
                 >
-                  <Text style={[styles.pointButtonText, active && styles.pointButtonTextActive]}>{point}</Text>
+                  <Text
+                    style={[
+                      styles.pointButtonText,
+                      active && styles.pointButtonTextActive,
+                    ]}
+                  >
+                    {point}
+                  </Text>
                 </Pressable>
               );
             })}
           </View>
           <View style={styles.setupFooter}>
             <Button onPress={onConfirm}>Start game</Button>
-            {dismissible ? <Button variant="outline" onPress={onClose}>Cancel</Button> : null}
+            {dismissible ? (
+              <Button variant="outline" onPress={onClose}>
+                Cancel
+              </Button>
+            ) : null}
           </View>
         </Animated.View>
       </Animated.View>
@@ -491,7 +618,15 @@ function GameSetupModal({
   );
 }
 
-function HistoryModal({ open, onClose, match }: { open: boolean; onClose: () => void; match: MatchState }) {
+function HistoryModal({
+  open,
+  onClose,
+  match,
+}: {
+  open: boolean;
+  onClose: () => void;
+  match: MatchState;
+}) {
   const sheetProgress = useBottomSheetProgress(open);
   const visible = useModalVisibility(open);
   const displayGame = useMemo(() => {
@@ -513,7 +648,9 @@ function HistoryModal({ open, onClose, match }: { open: boolean; onClose: () => 
     <Modal visible={visible} animationType="none" transparent>
       <Animated.View style={[styles.sheetBackdrop, { opacity: sheetProgress }]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <Animated.View style={[styles.sheet, getSheetAnimationStyle(sheetProgress)]}>
+        <Animated.View
+          style={[styles.sheet, getSheetAnimationStyle(sheetProgress)]}
+        >
           <View style={styles.sheetHandle} />
           <View style={styles.sheetHeader}>
             <View>
@@ -530,14 +667,25 @@ function HistoryModal({ open, onClose, match }: { open: boolean; onClose: () => 
               history.map((row) => (
                 <View key={row.id} style={styles.historyRow}>
                   <View style={styles.historyPrimary}>
-                    <View style={[styles.historyDot, { backgroundColor: getEventColor(row.type) }]} />
+                    <View
+                      style={[
+                        styles.historyDot,
+                        { backgroundColor: getEventColor(row.type) },
+                      ]}
+                    />
                     <View>
-                      <Text style={styles.historyTitle}>{row.player === "player" ? "You" : "Opponent"}</Text>
+                      <Text style={styles.historyTitle}>
+                        {row.player === "player" ? "You" : "Opponent"}
+                      </Text>
                       <Text style={styles.muted}>{row.label}</Text>
                     </View>
                   </View>
                   <View style={styles.historyMeta}>
-                    <Text style={styles.historyTitle}>{row.pointsDelta > 0 ? `+${row.pointsDelta}` : row.pointsDelta}</Text>
+                    <Text style={styles.historyTitle}>
+                      {row.pointsDelta > 0
+                        ? `+${row.pointsDelta}`
+                        : row.pointsDelta}
+                    </Text>
                     <Text style={styles.muted}>{row.score}</Text>
                   </View>
                 </View>
@@ -546,7 +694,9 @@ function HistoryModal({ open, onClose, match }: { open: boolean; onClose: () => 
               <Text style={styles.muted}>No events yet.</Text>
             )}
           </ScrollView>
-          <Button variant="outline" onPress={onClose}>Close</Button>
+          <Button variant="outline" onPress={onClose}>
+            Close
+          </Button>
         </Animated.View>
       </Animated.View>
     </Modal>
@@ -557,7 +707,7 @@ function MatchSettingsModal({
   open,
   onClose,
   onEndMatch,
-  onNewMatch
+  onNewMatch,
 }: {
   open: boolean;
   onClose: () => void;
@@ -571,12 +721,18 @@ function MatchSettingsModal({
     <Modal visible={visible} animationType="none" transparent>
       <Animated.View style={[styles.sheetBackdrop, { opacity: sheetProgress }]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <Animated.View style={[styles.settingsSheet, getSheetAnimationStyle(sheetProgress)]}>
+        <Animated.View
+          style={[styles.settingsSheet, getSheetAnimationStyle(sheetProgress)]}
+        >
           <View style={styles.sheetHandle} />
           <Text style={styles.title}>Match settings</Text>
           <Text style={styles.muted}>Manage the current table-side match.</Text>
-          <Button variant="outline" onPress={onNewMatch}>New match</Button>
-          <Button variant="outline" onPress={onEndMatch}>End match</Button>
+          <Button variant="outline" onPress={onNewMatch}>
+            New match
+          </Button>
+          <Button variant="outline" onPress={onEndMatch}>
+            End match
+          </Button>
         </Animated.View>
       </Animated.View>
     </Modal>
@@ -587,7 +743,7 @@ function ConfirmNewMatchModal({
   open,
   hasUnsavedMatch,
   onClose,
-  onConfirm
+  onConfirm,
 }: {
   open: boolean;
   hasUnsavedMatch: boolean;
@@ -601,7 +757,9 @@ function ConfirmNewMatchModal({
     <Modal visible={visible} animationType="none" transparent>
       <Animated.View style={[styles.sheetBackdrop, { opacity: sheetProgress }]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <Animated.View style={[styles.settingsSheet, getSheetAnimationStyle(sheetProgress)]}>
+        <Animated.View
+          style={[styles.settingsSheet, getSheetAnimationStyle(sheetProgress)]}
+        >
           <View style={styles.sheetHandle} />
           <Text style={styles.title}>Start new match?</Text>
           <Text style={styles.muted}>
@@ -609,7 +767,9 @@ function ConfirmNewMatchModal({
               ? "This match has not uploaded. Starting a new match discards this retryable result."
               : "This discards the current match and starts again at Game 1."}
           </Text>
-          <Button variant="outline" onPress={onConfirm}>New match</Button>
+          <Button variant="outline" onPress={onConfirm}>
+            New match
+          </Button>
           <Button onPress={onClose}>Cancel</Button>
         </Animated.View>
       </Animated.View>
@@ -629,7 +789,7 @@ function ManualEndModal({
   onNotesChange,
   onClose,
   onDiscard,
-  onSave
+  onSave,
 }: {
   open: boolean;
   result: MatchResult;
@@ -651,12 +811,16 @@ function ManualEndModal({
     <Modal visible={visible} animationType="none" transparent>
       <Animated.View style={[styles.sheetBackdrop, { opacity: sheetProgress }]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <Animated.View style={[styles.manualEndSheet, getSheetAnimationStyle(sheetProgress)]}>
+        <Animated.View
+          style={[styles.manualEndSheet, getSheetAnimationStyle(sheetProgress)]}
+        >
           <View style={styles.sheetHandle} />
           <ScrollView style={styles.manualEndScroll}>
             <View style={styles.manualEndContent}>
               <Text style={styles.title}>End match</Text>
-              <Text style={styles.muted}>Save the current match with a manual result, or discard it.</Text>
+              <Text style={styles.muted}>
+                Save the current match with a manual result, or discard it.
+              </Text>
               <Text style={styles.sectionLabel}>Result</Text>
               <View style={styles.resultGrid}>
                 {(["player", "opponent", "tie"] as const).map((option) => (
@@ -669,11 +833,26 @@ function ManualEndModal({
                   </Button>
                 ))}
               </View>
-              <LegendPicker label="Your legend" value={playerLegendId} onChange={onPlayerLegendChange} />
-              <LegendPicker label="Opponent legend" value={opponentLegendId} onChange={onOpponentLegendChange} />
-              <Field value={notes} onChangeText={onNotesChange} placeholder="Match notes" multiline />
+              <LegendPicker
+                label="Your legend"
+                value={playerLegendId}
+                onChange={onPlayerLegendChange}
+              />
+              <LegendPicker
+                label="Opponent legend"
+                value={opponentLegendId}
+                onChange={onOpponentLegendChange}
+              />
+              <Field
+                value={notes}
+                onChangeText={onNotesChange}
+                placeholder="Match notes"
+                multiline
+              />
               <Button onPress={onSave}>Save match</Button>
-              <Button variant="outline" onPress={onDiscard}>Discard match</Button>
+              <Button variant="outline" onPress={onDiscard}>
+                Discard match
+              </Button>
             </View>
           </ScrollView>
         </Animated.View>
@@ -686,7 +865,7 @@ function ManualEditModal({
   player,
   activeScore,
   onClose,
-  onAdjust
+  onAdjust,
 }: {
   player: PlayerSide | null;
   activeScore: number;
@@ -705,18 +884,28 @@ function ManualEditModal({
     <Modal visible animationType="fade" transparent>
       <View style={styles.modalBackdrop}>
         <Card>
-            <Text style={styles.title}>Edit {player === "player" ? "your" : "opponent"} score</Text>
+          <Text style={styles.title}>
+            Edit {player === "player" ? "your" : "opponent"} score
+          </Text>
           <View style={styles.stepper}>
-            <Pressable style={styles.iconButton} onPress={() => setDraft(Math.max(0, draft - 1))}>
+            <Pressable
+              style={styles.iconButton}
+              onPress={() => setDraft(Math.max(0, draft - 1))}
+            >
               <Text style={styles.stepperButtonText}>-</Text>
             </Pressable>
             <Text style={styles.stepperValue}>{draft}</Text>
-            <Pressable style={styles.iconButton} onPress={() => setDraft(draft + 1)}>
+            <Pressable
+              style={styles.iconButton}
+              onPress={() => setDraft(draft + 1)}
+            >
               <Text style={styles.stepperButtonText}>+</Text>
             </Pressable>
           </View>
           <View style={styles.row}>
-            <Button variant="outline" onPress={onClose}>Cancel</Button>
+            <Button variant="outline" onPress={onClose}>
+              Cancel
+            </Button>
             <Button
               onPress={() => {
                 onAdjust(player, draft);
@@ -738,20 +927,18 @@ function ReviewModal({
   playerLegendId,
   opponentLegendId,
   notes,
-  saveStatus,
   saveState,
   onPlayerLegendChange,
   onOpponentLegendChange,
   onNotesChange,
   onSave,
-  onReset
+  onReset,
 }: {
   open: boolean;
   match: MatchState;
   playerLegendId: string;
   opponentLegendId: string;
   notes: string;
-  saveStatus: string;
   saveState: "idle" | "saving" | "saved" | "failed";
   onPlayerLegendChange: (id: string) => void;
   onOpponentLegendChange: (id: string) => void;
@@ -775,18 +962,39 @@ function ReviewModal({
           <Card>
             <Text style={styles.title}>Match complete</Text>
             <Text style={styles.muted}>
-              {match.winner === "player" ? "You won" : "Opponent won"} {match.wins.player}-{match.wins.opponent}
+              {match.winner === "player" ? "You won" : "Opponent won"}{" "}
+              {match.wins.player}-{match.wins.opponent}
             </Text>
-            <LegendPicker label="Your legend" value={playerLegendId} onChange={onPlayerLegendChange} />
-            <LegendPicker label="Opponent legend" value={opponentLegendId} onChange={onOpponentLegendChange} />
-            <Field value={notes} onChangeText={onNotesChange} placeholder="Match notes" multiline />
-            <Button onPress={onSave} disabled={saveState === "saving" || saveState === "saved"}>
+            <LegendPicker
+              label="Your legend"
+              value={playerLegendId}
+              onChange={onPlayerLegendChange}
+            />
+            <LegendPicker
+              label="Opponent legend"
+              value={opponentLegendId}
+              onChange={onOpponentLegendChange}
+            />
+            <Field
+              value={notes}
+              onChangeText={onNotesChange}
+              placeholder="Match notes"
+              multiline
+            />
+            <Button
+              onPress={onSave}
+              disabled={saveState === "saved"}
+              loading={saveState === "saving"}
+            >
               {saveButtonLabel}
             </Button>
-            <Button variant="outline" onPress={onReset}>
+            <Button
+              variant="outline"
+              onPress={onReset}
+              disabled={saveState === "saving"}
+            >
               {saveState === "saved" ? "Finish" : "Finish without saving"}
             </Button>
-            {saveStatus ? <Text style={styles.muted}>{saveStatus}</Text> : null}
           </Card>
         </ScrollView>
       </View>
@@ -794,7 +1002,15 @@ function ReviewModal({
   );
 }
 
-function LegendPicker({ label, value, onChange }: { label: string; value: string; onChange: (id: string) => void }) {
+function LegendPicker({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (id: string) => void;
+}) {
   return (
     <View style={styles.legendPicker}>
       <Text style={styles.sectionLabel}>{label}</Text>
@@ -803,9 +1019,17 @@ function LegendPicker({ label, value, onChange }: { label: string; value: string
           <Pressable
             key={legend.id}
             onPress={() => onChange(legend.id)}
-            style={[styles.legendChip, value === legend.id && styles.legendChipActive]}
+            style={[
+              styles.legendChip,
+              value === legend.id && styles.legendChipActive,
+            ]}
           >
-            <Text style={[styles.legendChipText, value === legend.id && styles.legendChipTextActive]}>
+            <Text
+              style={[
+                styles.legendChipText,
+                value === legend.id && styles.legendChipTextActive,
+              ]}
+            >
               {legend.name}
             </Text>
           </Pressable>
@@ -817,23 +1041,27 @@ function LegendPicker({ label, value, onChange }: { label: string; value: string
 
 const SCORE_REASON_META: Record<
   ScoreReason,
-  { label: string; color: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }
+  {
+    label: string;
+    color: string;
+    icon: keyof typeof MaterialCommunityIcons.glyphMap;
+  }
 > = {
   holding: {
     label: "Hold",
     color: colors.holding,
-    icon: "shield"
+    icon: "shield",
   },
   conquering: {
     label: "Conquer",
     color: colors.conquering,
-    icon: "sword-cross"
+    icon: "sword-cross",
   },
   ability: {
     label: "Ability",
     color: colors.ability,
-    icon: "lightning-bolt"
-  }
+    icon: "lightning-bolt",
+  },
 };
 
 function getEventColor(type: ScoreEventType) {
@@ -857,7 +1085,7 @@ function useBottomSheetProgress(open: boolean) {
     Animated.timing(progress, {
       toValue: open ? 1 : 0,
       duration: 180,
-      useNativeDriver: true
+      useNativeDriver: true,
     }).start();
   }, [open, progress]);
 
@@ -886,10 +1114,10 @@ function getSheetAnimationStyle(progress: Animated.Value) {
       {
         translateY: progress.interpolate({
           inputRange: [0, 1],
-          outputRange: [280, 0]
-        })
-      }
-    ]
+          outputRange: [280, 0],
+        }),
+      },
+    ],
   };
 }
 
@@ -902,28 +1130,28 @@ function formatElapsed(seconds: number) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.background
+    backgroundColor: colors.background,
   },
   centered: {
     flex: 1,
     justifyContent: "center",
     padding: 16,
-    paddingBottom: 112
+    paddingBottom: 112,
   },
   authView: {
-    flex: 1
+    flex: 1,
   },
   scoreboard: {
     flex: 1,
     paddingTop: 22,
-    paddingBottom: 82
+    paddingBottom: 82,
   },
   emptyState: {
     flex: 1,
     padding: 16,
     paddingBottom: 112,
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
   },
   emptyCard: {
     width: "100%",
@@ -934,17 +1162,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     padding: 18,
     gap: 12,
-    alignItems: "center"
+    alignItems: "center",
   },
   emptyTitle: {
     color: colors.foreground,
     fontSize: 24,
-    fontWeight: "900"
+    fontWeight: "900",
   },
   emptyText: {
     color: colors.mutedForeground,
     fontSize: 14,
-    textAlign: "center"
+    textAlign: "center",
   },
   panel: {
     flex: 1,
@@ -954,18 +1182,18 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     gap: 13,
     backgroundColor: colors.background,
-    position: "relative"
+    position: "relative",
   },
   inverted: {
     transform: [{ rotate: "180deg" }],
     borderTopWidth: 1,
-    borderTopColor: colors.border
+    borderTopColor: colors.border,
   },
   playerLabel: {
     color: colors.mutedForeground,
     fontSize: 15,
     fontWeight: "700",
-    textTransform: "uppercase"
+    textTransform: "uppercase",
   },
   playerHeader: {
     position: "absolute",
@@ -974,32 +1202,32 @@ const styles = StyleSheet.create({
     right: 16,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between"
+    justifyContent: "space-between",
   },
   playerStatus: {
     color: colors.mutedForeground,
     fontSize: 11,
-    fontWeight: "700"
+    fontWeight: "700",
   },
   scorePad: {
     width: "100%",
     maxWidth: 420,
     alignItems: "center",
     justifyContent: "center",
-    transform: [{ translateY: -18 }]
+    transform: [{ translateY: -18 }],
   },
   playerMain: {
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
     marginTop: 0,
-    marginBottom: 0
+    marginBottom: 0,
   },
   score: {
     color: colors.foreground,
     fontSize: 152,
     lineHeight: 156,
-    fontWeight: "800"
+    fontWeight: "800",
   },
   scoreControls: {
     width: "100%",
@@ -1008,12 +1236,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-start",
     position: "relative",
-    transform: [{ translateY: 14 }]
+    transform: [{ translateY: 14 }],
   },
   primaryScoreActions: {
     width: "100%",
     flexDirection: "row",
-    justifyContent: "space-between"
+    justifyContent: "space-between",
   },
   scoreButton: {
     width: 104,
@@ -1023,7 +1251,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     alignItems: "center",
     justifyContent: "center",
-    gap: 6
+    gap: 6,
   },
   compactScoreButton: {
     position: "absolute",
@@ -1037,15 +1265,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     alignItems: "center",
     justifyContent: "center",
-    gap: 4
+    gap: 4,
   },
   scoreButtonText: {
     color: colors.secondaryForeground,
     fontSize: 12,
-    fontWeight: "800"
+    fontWeight: "800",
   },
   compactScoreButtonText: {
-    fontSize: 8
+    fontSize: 8,
   },
   iconButton: {
     width: 48,
@@ -1055,7 +1283,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.card
+    backgroundColor: colors.card,
   },
   matchBar: {
     minHeight: 70,
@@ -1067,7 +1295,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     alignItems: "center",
     justifyContent: "center",
-    position: "relative"
+    position: "relative",
   },
   statusPill: {
     width: 176,
@@ -1077,7 +1305,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 2,
-    paddingHorizontal: 12
+    paddingHorizontal: 12,
   },
   nextGameButton: {
     width: 190,
@@ -1086,35 +1314,35 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 12
+    paddingHorizontal: 12,
   },
   nextGameButtonText: {
     color: colors.primaryForeground,
     fontSize: 14,
     fontWeight: "900",
-    textTransform: "uppercase"
+    textTransform: "uppercase",
   },
   timerRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4
+    gap: 4,
   },
   timerText: {
     color: colors.foreground,
     fontSize: 17,
-    fontWeight: "900"
+    fontWeight: "900",
   },
   matchBarText: {
     color: colors.foreground,
-    fontWeight: "800"
+    fontWeight: "800",
   },
   matchMeta: {
-    gap: 3
+    gap: 3,
   },
   matchSubtext: {
     color: colors.mutedForeground,
     fontSize: 12,
-    fontWeight: "700"
+    fontWeight: "700",
   },
   settingsButton: {
     position: "absolute",
@@ -1127,7 +1355,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.card
+    backgroundColor: colors.card,
   },
   historyButton: {
     position: "absolute",
@@ -1141,40 +1369,40 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     paddingHorizontal: 10,
     paddingVertical: 8,
-    backgroundColor: colors.card
+    backgroundColor: colors.card,
   },
   historyButtonText: {
     color: colors.cardForeground,
     fontWeight: "800",
-    fontSize: 12
+    fontSize: 12,
   },
   title: {
     color: colors.foreground,
     fontSize: 22,
-    fontWeight: "800"
+    fontWeight: "800",
   },
   muted: {
     color: colors.mutedForeground,
-    fontSize: 14
+    fontSize: 14,
   },
   sectionLabel: {
     color: colors.foreground,
     fontSize: 13,
-    fontWeight: "800"
+    fontWeight: "800",
   },
   row: {
     flexDirection: "row",
     gap: 8,
-    alignItems: "center"
+    alignItems: "center",
   },
   modalBackdrop: {
     flex: 1,
     justifyContent: "center",
     padding: 16,
-    backgroundColor: colors.backdrop
+    backgroundColor: colors.backdrop,
   },
   modalCardLayer: {
-    position: "relative"
+    position: "relative",
   },
   modalCloseButton: {
     position: "absolute",
@@ -1187,7 +1415,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.card
+    backgroundColor: colors.card,
   },
   gameSetupSheet: {
     position: "absolute",
@@ -1201,7 +1429,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: colors.border,
     padding: 18,
-    gap: 16
+    gap: 16,
   },
   setupCloseButton: {
     position: "absolute",
@@ -1214,13 +1442,13 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.card
+    backgroundColor: colors.card,
   },
   setupHero: {
     alignItems: "center",
     gap: 10,
     paddingTop: 20,
-    paddingBottom: 8
+    paddingBottom: 8,
   },
   setupIcon: {
     width: 70,
@@ -1230,23 +1458,23 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.background
+    backgroundColor: colors.background,
   },
   setupTitle: {
     color: colors.foreground,
     fontSize: 28,
     fontWeight: "900",
     textAlign: "center",
-    textTransform: "uppercase"
+    textTransform: "uppercase",
   },
   setupSubtitle: {
     color: colors.mutedForeground,
     fontSize: 15,
-    textAlign: "center"
+    textAlign: "center",
   },
   setupChoiceGrid: {
     flexDirection: "row",
-    gap: 12
+    gap: 12,
   },
   setupChoice: {
     flex: 1,
@@ -1258,31 +1486,31 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    padding: 12
+    padding: 12,
   },
   setupChoiceActive: {
     borderColor: colors.primary,
-    backgroundColor: colors.primary
+    backgroundColor: colors.primary,
   },
   setupChoiceTitle: {
     color: colors.foreground,
     fontSize: 18,
-    fontWeight: "900"
+    fontWeight: "900",
   },
   setupChoiceTitleActive: {
-    color: colors.primaryForeground
+    color: colors.primaryForeground,
   },
   setupChoiceText: {
     color: colors.mutedForeground,
     fontSize: 12,
-    textAlign: "center"
+    textAlign: "center",
   },
   setupChoiceTextActive: {
-    color: colors.primaryForeground
+    color: colors.primaryForeground,
   },
   pointRow: {
     flexDirection: "row",
-    gap: 10
+    gap: 10,
   },
   pointButton: {
     flex: 1,
@@ -1292,23 +1520,23 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.background
+    backgroundColor: colors.background,
   },
   pointButtonActive: {
     borderColor: colors.primary,
-    backgroundColor: colors.primary
+    backgroundColor: colors.primary,
   },
   pointButtonText: {
     color: colors.foreground,
     fontSize: 24,
-    fontWeight: "900"
+    fontWeight: "900",
   },
   pointButtonTextActive: {
-    color: colors.primaryForeground
+    color: colors.primaryForeground,
   },
   setupFooter: {
     marginTop: "auto",
-    gap: 10
+    gap: 10,
   },
   sheet: {
     position: "absolute",
@@ -1322,7 +1550,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: colors.border,
     padding: 16,
-    gap: 12
+    gap: 12,
   },
   settingsSheet: {
     position: "absolute",
@@ -1335,7 +1563,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: colors.border,
     padding: 16,
-    gap: 12
+    gap: 12,
   },
   manualEndSheet: {
     position: "absolute",
@@ -1349,39 +1577,39 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: colors.border,
     padding: 16,
-    gap: 12
+    gap: 12,
   },
   manualEndScroll: {
-    maxHeight: "100%"
+    maxHeight: "100%",
   },
   manualEndContent: {
     gap: 12,
-    paddingBottom: 4
+    paddingBottom: 4,
   },
   resultGrid: {
     flexDirection: "row",
-    gap: 8
+    gap: 8,
   },
   sheetBackdrop: {
     flex: 1,
     justifyContent: "flex-end",
-    backgroundColor: colors.backdrop
+    backgroundColor: colors.backdrop,
   },
   sheetHandle: {
     alignSelf: "center",
     width: 44,
     height: 4,
     borderRadius: 999,
-    backgroundColor: colors.ring
+    backgroundColor: colors.ring,
   },
   historyList: {
-    maxHeight: 360
+    maxHeight: 360,
   },
   sheetHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 12
+    gap: 12,
   },
   historyRow: {
     minHeight: 62,
@@ -1389,50 +1617,50 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between"
+    justifyContent: "space-between",
   },
   historyPrimary: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10
+    gap: 10,
   },
   historyDot: {
     width: 10,
     height: 10,
-    borderRadius: 999
+    borderRadius: 999,
   },
   historyTitle: {
     color: colors.foreground,
-    fontWeight: "800"
+    fontWeight: "800",
   },
   historyMeta: {
-    alignItems: "flex-end"
+    alignItems: "flex-end",
   },
   stepper: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between"
+    justifyContent: "space-between",
   },
   stepperValue: {
     color: colors.foreground,
     fontSize: 56,
-    fontWeight: "800"
+    fontWeight: "800",
   },
   stepperButtonText: {
     color: colors.cardForeground,
     fontSize: 24,
-    fontWeight: "900"
+    fontWeight: "900",
   },
   reviewCard: {
-    maxHeight: "92%"
+    maxHeight: "92%",
   },
   legendPicker: {
-    gap: 8
+    gap: 8,
   },
   legendGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8
+    gap: 8,
   },
   legendChip: {
     borderWidth: 1,
@@ -1440,20 +1668,20 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     paddingHorizontal: 10,
     paddingVertical: 8,
-    backgroundColor: colors.card
+    backgroundColor: colors.card,
   },
   legendChipActive: {
     borderColor: colors.primary,
-    backgroundColor: colors.primary
+    backgroundColor: colors.primary,
   },
   legendChipText: {
     color: colors.cardForeground,
-    fontWeight: "700"
+    fontWeight: "700",
   },
   legendChipTextActive: {
-    color: colors.primaryForeground
+    color: colors.primaryForeground,
   },
   disabled: {
-    opacity: 0.45
-  }
+    opacity: 0.45,
+  },
 });

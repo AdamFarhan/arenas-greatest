@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { colors, radius } from "@/lib/theme";
 
 export function Card({ children }: { children: ReactNode }) {
@@ -10,27 +10,37 @@ export function Button({
   children,
   onPress,
   variant = "primary",
-  disabled = false
+  disabled = false,
+  loading = false
 }: {
   children: ReactNode;
   onPress: () => void;
   variant?: "primary" | "secondary" | "outline";
   disabled?: boolean;
+  loading?: boolean;
 }) {
+  const isDisabled = disabled || loading;
+  const textStyle = variant === "primary" ? styles.primaryText : styles.secondaryText;
+
   return (
     <Pressable
-      disabled={disabled}
+      disabled={isDisabled}
       onPress={() => onPress()}
       style={({ pressed }) => [
         styles.button,
         styles[variant],
-        disabled && styles.disabled,
-        pressed && !disabled && styles.pressed
+        disabled && !loading && styles.disabled,
+        pressed && !isDisabled && styles.pressed
       ]}
     >
-      <Text style={[styles.buttonText, variant === "primary" ? styles.primaryText : styles.secondaryText]}>
-        {children}
-      </Text>
+      {loading ? (
+        <View style={styles.loadingContent}>
+          <ActivityIndicator size="small" color={variant === "primary" ? colors.primaryForeground : colors.secondaryForeground} />
+          <Text style={[styles.buttonText, textStyle]}>{children}</Text>
+        </View>
+      ) : (
+        <Text style={[styles.buttonText, textStyle]}>{children}</Text>
+      )}
     </Pressable>
   );
 }
@@ -108,6 +118,12 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 14,
     fontWeight: "700"
+  },
+  loadingContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8
   },
   primaryText: {
     color: colors.primaryForeground

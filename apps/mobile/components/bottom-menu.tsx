@@ -2,6 +2,7 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { usePathname, useRouter } from "expo-router";
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, radius } from "@/lib/theme";
 
 type MenuItem = {
@@ -56,9 +57,11 @@ export function MenuScreen({
   subtitle: string;
   children: ReactNode;
 }) {
+  const insets = useSafeAreaInsets();
+
   return (
     <View style={styles.screen}>
-      <View style={styles.content}>
+      <View style={[styles.content, { paddingTop: insets.top + 20 }]}>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.subtitle}>{subtitle}</Text>
         {children}
