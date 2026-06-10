@@ -20,9 +20,10 @@ const MENU_ITEMS: MenuItem[] = [
 export function BottomMenu({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.menu}>
+    <View style={[styles.menu, { bottom: Math.max(18, insets.bottom + 8) }]}>
       {MENU_ITEMS.map((item) => {
         const active = pathname === item.href || pathname.startsWith(`${item.href}/`) || (pathname === "/" && item.href === "/play");
 

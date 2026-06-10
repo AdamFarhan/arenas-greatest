@@ -206,7 +206,7 @@ export default function ScorerScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <View style={styles.screen}>
       {hasStartedMatch ? (
         <View style={styles.scoreboard}>
           <PlayerPanel
@@ -353,7 +353,7 @@ export default function ScorerScreen() {
         onReset={resetMatch}
       />
       <BottomMenu />
-    </SafeAreaView>
+    </View>
   );
 }
 
