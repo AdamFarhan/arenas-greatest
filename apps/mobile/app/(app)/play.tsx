@@ -10,6 +10,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  Vibration,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -26,7 +27,10 @@ import { buildCompletedMatchPayload, saveCompletedMatch } from "@riftbound/db";
 import { LEGENDS } from "@riftbound/legends";
 import { BottomMenu } from "@/components/bottom-menu";
 import { Button, Card, Field } from "@/components/primitives";
-import { ScoreHistoryTable, type ScoreHistoryEntry } from "@/components/score-history-table";
+import {
+  ScoreHistoryTable,
+  type ScoreHistoryEntry,
+} from "@/components/score-history-table";
 import { getMobileSupabase, hasSupabaseConfig } from "@/lib/supabase";
 import { useMatchState, type SetupDraft } from "@/lib/match-state";
 import { useSavedMatches } from "@/lib/saved-matches";
@@ -170,19 +174,23 @@ export default function ScorerScreen() {
       durationSeconds: elapsedSeconds,
     });
 
-    const { data: savedMatch, error } = await saveCompletedMatch(supabase, payload).catch(
-      (error: unknown) => ({
-        data: null,
-        error: toError(error, "Could not save match."),
-      }),
-    );
+    const { data: savedMatch, error } = await saveCompletedMatch(
+      supabase,
+      payload,
+    ).catch((error: unknown) => ({
+      data: null,
+      error: toError(error, "Could not save match."),
+    }));
 
     if (error || !savedMatch) {
       setSaveState("failed");
       setSaveStatus(
         "Save failed. Keep this screen open and try again when you have service.",
       );
-      Alert.alert("Save failed", getErrorDetail(error ?? new Error("Could not save match.")));
+      Alert.alert(
+        "Save failed",
+        getErrorDetail(error ?? new Error("Could not save match.")),
+      );
       return false;
     }
 
@@ -466,7 +474,10 @@ function ScoreButton({
         { borderColor: config.color },
         disabled && styles.disabled,
       ]}
-      onPress={onPress}
+      onPress={() => {
+        Vibration.vibrate(30);
+        onPress();
+      }}
       disabled={disabled}
     >
       <MaterialCommunityIcons
@@ -672,7 +683,10 @@ function HistoryModal({
           </View>
           <ScrollView style={styles.historyList}>
             {historyEntries.length ? (
-              <ScoreHistoryTable entries={historyEntries} winningPoint={displayGame?.winningPoint} />
+              <ScoreHistoryTable
+                entries={historyEntries}
+                winningPoint={displayGame?.winningPoint}
+              />
             ) : (
               <Text style={styles.muted}>No events yet.</Text>
             )}
@@ -1002,7 +1016,9 @@ function LegendPicker({
 
     if (!normalizedQuery) return LEGENDS;
 
-    return LEGENDS.filter((legend) => legend.name.toLowerCase().includes(normalizedQuery));
+    return LEGENDS.filter((legend) =>
+      legend.name.toLowerCase().includes(normalizedQuery),
+    );
   }, [query]);
 
   useEffect(() => {
@@ -1014,10 +1030,19 @@ function LegendPicker({
       <Text style={styles.sectionLabel}>{label}</Text>
       <Pressable
         onPress={() => setOpen(true)}
-        style={({ pressed }) => [styles.legendSelect, pressed && styles.pressed]}
+        style={({ pressed }) => [
+          styles.legendSelect,
+          pressed && styles.pressed,
+        ]}
       >
-        <Text style={styles.legendSelectText}>{selectedLegend?.name ?? "Choose legend"}</Text>
-        <MaterialCommunityIcons name="chevron-right" size={22} color={colors.mutedForeground} />
+        <Text style={styles.legendSelectText}>
+          {selectedLegend?.name ?? "Choose legend"}
+        </Text>
+        <MaterialCommunityIcons
+          name="chevron-right"
+          size={22}
+          color={colors.mutedForeground}
+        />
       </Pressable>
       <Modal visible={open} animationType="slide">
         <SafeAreaView style={styles.legendSelectScreen}>
@@ -1025,9 +1050,16 @@ function LegendPicker({
             <Pressable
               accessibilityLabel="Close legend picker"
               onPress={() => setOpen(false)}
-              style={({ pressed }) => [styles.legendSelectClose, pressed && styles.pressed]}
+              style={({ pressed }) => [
+                styles.legendSelectClose,
+                pressed && styles.pressed,
+              ]}
             >
-              <MaterialCommunityIcons name="arrow-left" size={24} color={colors.foreground} />
+              <MaterialCommunityIcons
+                name="arrow-left"
+                size={24}
+                color={colors.foreground}
+              />
             </Pressable>
             <Text style={styles.legendSelectTitle}>{label}</Text>
           </View>
@@ -1069,7 +1101,11 @@ function LegendPicker({
                     {legend.name}
                   </Text>
                   {isSelected ? (
-                    <MaterialCommunityIcons name="check" size={22} color={colors.primaryForeground} />
+                    <MaterialCommunityIcons
+                      name="check"
+                      size={22}
+                      color={colors.primaryForeground}
+                    />
                   ) : null}
                 </Pressable>
               );
