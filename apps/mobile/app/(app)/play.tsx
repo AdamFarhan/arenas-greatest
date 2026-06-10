@@ -15,18 +15,17 @@ import {
 import {
   addScore,
   getActiveGame,
-  getCurrentGameHistory,
   manuallyAdjustScore,
   startGame,
   type MatchState,
   type PlayerSide,
-  type ScoreEventType,
   type ScoreReason,
 } from "@riftbound/core";
 import { buildCompletedMatchPayload, saveCompletedMatch } from "@riftbound/db";
 import { LEGENDS } from "@riftbound/legends";
 import { BottomMenu } from "@/components/bottom-menu";
 import { Button, Card, Field } from "@/components/primitives";
+import { ScoreHistoryTable, type ScoreHistoryEntry } from "@/components/score-history-table";
 import { getMobileSupabase, hasSupabaseConfig } from "@/lib/supabase";
 import { useMatchState, type SetupDraft } from "@/lib/match-state";
 import { useSavedMatches } from "@/lib/saved-matches";
@@ -639,12 +638,17 @@ function HistoryModal({
       return match.games.at(-1);
     }
   }, [match]);
-  const history = useMemo(() => {
-    try {
-      return displayGame ? getCurrentGameHistory(displayGame) : [];
-    } catch {
-      return [];
-    }
+  const historyEntries = useMemo<ScoreHistoryEntry[]>(() => {
+    return (
+      displayGame?.events.map((event) => ({
+        id: event.id,
+        player: event.player,
+        type: event.type,
+        scoreValue: event.resultingScore[event.player],
+        previousScore: event.previousScore,
+        adjustedScore: event.adjustedScore,
+      })) ?? []
+    );
   }, [displayGame]);
 
   return (
@@ -666,33 +670,8 @@ function HistoryModal({
             </View>
           </View>
           <ScrollView style={styles.historyList}>
-            {history.length ? (
-              history.map((row) => (
-                <View key={row.id} style={styles.historyRow}>
-                  <View style={styles.historyPrimary}>
-                    <View
-                      style={[
-                        styles.historyDot,
-                        { backgroundColor: getEventColor(row.type) },
-                      ]}
-                    />
-                    <View>
-                      <Text style={styles.historyTitle}>
-                        {row.player === "player" ? "You" : "Opponent"}
-                      </Text>
-                      <Text style={styles.muted}>{row.label}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.historyMeta}>
-                    <Text style={styles.historyTitle}>
-                      {row.pointsDelta > 0
-                        ? `+${row.pointsDelta}`
-                        : row.pointsDelta}
-                    </Text>
-                    <Text style={styles.muted}>{row.score}</Text>
-                  </View>
-                </View>
-              ))
+            {historyEntries.length ? (
+              <ScoreHistoryTable entries={historyEntries} winningPoint={displayGame?.winningPoint} />
             ) : (
               <Text style={styles.muted}>No events yet.</Text>
             )}
@@ -1066,14 +1045,6 @@ const SCORE_REASON_META: Record<
     icon: "lightning-bolt",
   },
 };
-
-function getEventColor(type: ScoreEventType) {
-  if (type === "manual_adjustment") {
-    return colors.ring;
-  }
-
-  return SCORE_REASON_META[type].color;
-}
 
 function getResultLabel(result: MatchResult) {
   if (result === "player") return "You won";
@@ -1613,31 +1584,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
-  },
-  historyRow: {
-    minHeight: 62,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  historyPrimary: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  historyDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 999,
-  },
-  historyTitle: {
-    color: colors.foreground,
-    fontWeight: "800",
-  },
-  historyMeta: {
-    alignItems: "flex-end",
   },
   stepper: {
     flexDirection: "row",
