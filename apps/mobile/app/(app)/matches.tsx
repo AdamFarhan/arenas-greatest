@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Animated,
   Image,
   Pressable,
   RefreshControl,
@@ -32,10 +33,11 @@ type TimeMatchGroup = {
 
 export default function MatchesScreen() {
   const router = useRouter();
-  const { matches, status, loadMatchesIfNeeded, refreshMatches } =
+  const { matches, status, isLoaded, loadMatchesIfNeeded, refreshMatches } =
     useSavedMatches();
   const [refreshing, setRefreshing] = useState(false);
   const groupedMatches = useMemo(() => groupMatches(matches), [matches]);
+  const initialLoading = !isLoaded && matches.length === 0;
 
   useEffect(() => {
     loadMatchesIfNeeded();
@@ -59,51 +61,154 @@ export default function MatchesScreen() {
           />
         }
       >
-        {status ? <Text style={styles.status}>{status}</Text> : null}
-        {groupedMatches.map((timeGroup) => (
-          <View key={timeGroup.key} style={styles.timeGroup}>
-            <Text style={styles.timeLabel}>{timeGroup.label}</Text>
-            {timeGroup.legends.map((legendGroup) => (
-              <View
-                key={`${timeGroup.key}-${legendGroup.legendId}`}
-                style={styles.legendGroup}
-              >
-                <View style={styles.legendHeader}>
-                  <LegendAvatar
-                    legendId={legendGroup.legendId}
-                    name={legendGroup.legendName}
-                    size={42}
-                  />
-                  <View style={styles.legendHeaderText}>
-                    <Text style={styles.legendTitle}>
-                      {shortLegendName(legendGroup.legendName)}
-                    </Text>
-                    <Text style={styles.legendMeta}>
-                      {legendGroup.matches.length}{" "}
-                      {legendGroup.matches.length === 1 ? "match" : "matches"}
-                    </Text>
+        {initialLoading ? <MatchHistorySkeleton /> : null}
+        {!initialLoading && status ? (
+          <Text style={styles.status}>{status}</Text>
+        ) : null}
+        {!initialLoading &&
+          groupedMatches.map((timeGroup) => (
+            <View key={timeGroup.key} style={styles.timeGroup}>
+              <Text style={styles.timeLabel}>{timeGroup.label}</Text>
+              {timeGroup.legends.map((legendGroup) => (
+                <View
+                  key={`${timeGroup.key}-${legendGroup.legendId}`}
+                  style={styles.legendGroup}
+                >
+                  <View style={styles.legendHeader}>
+                    <LegendAvatar
+                      legendId={legendGroup.legendId}
+                      name={legendGroup.legendName}
+                      size={42}
+                    />
+                    <View style={styles.legendHeaderText}>
+                      <Text style={styles.legendTitle}>
+                        {shortLegendName(legendGroup.legendName)}
+                      </Text>
+                      <Text style={styles.legendMeta}>
+                        {legendGroup.matches.length}{" "}
+                        {legendGroup.matches.length === 1 ? "match" : "matches"}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.cards}>
+                    {legendGroup.matches.map((match) => (
+                      <MatchCard
+                        key={match.id}
+                        match={match}
+                        onPress={() =>
+                          router.push({
+                            pathname: "/matches/[id]",
+                            params: { id: match.id },
+                          })
+                        }
+                      />
+                    ))}
                   </View>
                 </View>
-                <View style={styles.cards}>
-                  {legendGroup.matches.map((match) => (
-                    <MatchCard
-                      key={match.id}
-                      match={match}
-                      onPress={() =>
-                        router.push({
-                          pathname: "/matches/[id]",
-                          params: { id: match.id },
-                        })
-                      }
-                    />
-                  ))}
+              ))}
+            </View>
+          ))}
+      </ScrollView>
+    </MenuScreen>
+  );
+}
+
+function MatchHistorySkeleton() {
+  const opacity = useRef(new Animated.Value(0.48)).current;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, {
+          toValue: 0.86,
+          duration: 760,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 0.48,
+          duration: 760,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    animation.start();
+    return () => animation.stop();
+  }, [opacity]);
+
+  return (
+    <>
+      <SkeletonBlock
+        animatedOpacity={opacity}
+        style={styles.skeletonTimeTitle}
+      />
+      {[0, 1].map((groupIndex) => (
+        <View key={groupIndex} style={styles.legendGroup}>
+          <View style={styles.legendHeader}>
+            <SkeletonBlock
+              animatedOpacity={opacity}
+              style={styles.skeletonLegendAvatar}
+            />
+            <View style={styles.skeletonLegendText}>
+              <SkeletonBlock
+                animatedOpacity={opacity}
+                style={styles.skeletonLegendTitle}
+              />
+              <SkeletonBlock
+                animatedOpacity={opacity}
+                style={styles.skeletonLegendMeta}
+              />
+            </View>
+          </View>
+          <View style={styles.cards}>
+            {[0, 1].map((cardIndex) => (
+              <View key={cardIndex} style={styles.skeletonCard}>
+                <View style={styles.skeletonCardHero}>
+                  <SkeletonBlock
+                    animatedOpacity={opacity}
+                    style={styles.skeletonArtBlock}
+                  />
+                </View>
+                <View style={styles.skeletonCardBody}>
+                  <SkeletonBlock
+                    animatedOpacity={opacity}
+                    style={styles.skeletonOpponent}
+                  />
+                  <SkeletonBlock
+                    animatedOpacity={opacity}
+                    style={styles.skeletonTime}
+                  />
+                </View>
+                <View style={styles.skeletonScoreBlock}>
+                  <SkeletonBlock
+                    animatedOpacity={opacity}
+                    style={styles.skeletonScore}
+                  />
+                  <SkeletonBlock
+                    animatedOpacity={opacity}
+                    style={styles.skeletonResult}
+                  />
                 </View>
               </View>
             ))}
           </View>
-        ))}
-      </ScrollView>
-    </MenuScreen>
+        </View>
+      ))}
+    </>
+  );
+}
+
+function SkeletonBlock({
+  animatedOpacity,
+  style,
+}: {
+  animatedOpacity: Animated.Value;
+  style: object;
+}) {
+  return (
+    <Animated.View
+      style={[styles.skeletonBlock, style, { opacity: animatedOpacity }]}
+    />
   );
 }
 
@@ -312,6 +417,14 @@ const styles = StyleSheet.create({
     color: colors.mutedForeground,
     fontSize: 14,
   },
+  skeletonBlock: {
+    backgroundColor: colors.muted,
+  },
+  skeletonTimeTitle: {
+    width: 96,
+    height: 28,
+    borderRadius: radius.md,
+  },
   timeGroup: {
     gap: 14,
   },
@@ -443,5 +556,81 @@ const styles = StyleSheet.create({
   avatarInitials: {
     color: colors.foreground,
     fontWeight: "900",
+  },
+  skeletonLegendAvatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 2,
+    borderColor: colors.border,
+  },
+  skeletonLegendText: {
+    flex: 1,
+    gap: 8,
+  },
+  skeletonLegendTitle: {
+    width: 118,
+    height: 22,
+    borderRadius: radius.md,
+  },
+  skeletonLegendMeta: {
+    width: 74,
+    height: 14,
+    borderRadius: radius.md,
+  },
+  skeletonCard: {
+    minHeight: 112,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.card,
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    opacity: 0.82,
+  },
+  skeletonCardHero: {
+    width: 126,
+    minHeight: 72,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  skeletonArtBlock: {
+    width: 110,
+    height: 62,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  skeletonCardBody: {
+    flex: 1,
+    minWidth: 0,
+    gap: 10,
+  },
+  skeletonOpponent: {
+    width: "70%",
+    height: 20,
+    borderRadius: radius.md,
+  },
+  skeletonTime: {
+    width: 76,
+    height: 16,
+    borderRadius: radius.md,
+  },
+  skeletonScoreBlock: {
+    minWidth: 72,
+    alignItems: "flex-end",
+    gap: 8,
+  },
+  skeletonScore: {
+    width: 58,
+    height: 30,
+    borderRadius: radius.md,
+  },
+  skeletonResult: {
+    width: 48,
+    height: 12,
+    borderRadius: radius.md,
   },
 });
