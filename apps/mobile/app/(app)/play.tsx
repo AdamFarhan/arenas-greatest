@@ -10,6 +10,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import {
@@ -993,30 +994,92 @@ function LegendPicker({
   value: string;
   onChange: (id: string) => void;
 }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const selectedLegend = LEGENDS.find((legend) => legend.id === value);
+  const filteredLegends = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    if (!normalizedQuery) return LEGENDS;
+
+    return LEGENDS.filter((legend) => legend.name.toLowerCase().includes(normalizedQuery));
+  }, [query]);
+
+  useEffect(() => {
+    if (!open) setQuery("");
+  }, [open]);
+
   return (
     <View style={styles.legendPicker}>
       <Text style={styles.sectionLabel}>{label}</Text>
-      <View style={styles.legendGrid}>
-        {LEGENDS.map((legend) => (
-          <Pressable
-            key={legend.id}
-            onPress={() => onChange(legend.id)}
-            style={[
-              styles.legendChip,
-              value === legend.id && styles.legendChipActive,
-            ]}
-          >
-            <Text
-              style={[
-                styles.legendChipText,
-                value === legend.id && styles.legendChipTextActive,
-              ]}
+      <Pressable
+        onPress={() => setOpen(true)}
+        style={({ pressed }) => [styles.legendSelect, pressed && styles.pressed]}
+      >
+        <Text style={styles.legendSelectText}>{selectedLegend?.name ?? "Choose legend"}</Text>
+        <MaterialCommunityIcons name="chevron-right" size={22} color={colors.mutedForeground} />
+      </Pressable>
+      <Modal visible={open} animationType="slide">
+        <SafeAreaView style={styles.legendSelectScreen}>
+          <View style={styles.legendSelectHeader}>
+            <Pressable
+              accessibilityLabel="Close legend picker"
+              onPress={() => setOpen(false)}
+              style={({ pressed }) => [styles.legendSelectClose, pressed && styles.pressed]}
             >
-              {legend.name}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+              <MaterialCommunityIcons name="arrow-left" size={24} color={colors.foreground} />
+            </Pressable>
+            <Text style={styles.legendSelectTitle}>{label}</Text>
+          </View>
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search legends"
+            placeholderTextColor={colors.mutedForeground}
+            autoCapitalize="none"
+            autoCorrect={false}
+            style={styles.legendSearch}
+          />
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.legendSelectList}
+          >
+            {filteredLegends.map((legend) => {
+              const isSelected = value === legend.id;
+
+              return (
+                <Pressable
+                  key={legend.id}
+                  onPress={() => {
+                    onChange(legend.id);
+                    setOpen(false);
+                  }}
+                  style={({ pressed }) => [
+                    styles.legendSelectOption,
+                    isSelected && styles.legendSelectOptionActive,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.legendSelectOptionText,
+                      isSelected && styles.legendSelectOptionTextActive,
+                    ]}
+                  >
+                    {legend.name}
+                  </Text>
+                  {isSelected ? (
+                    <MaterialCommunityIcons name="check" size={22} color={colors.primaryForeground} />
+                  ) : null}
+                </Pressable>
+              );
+            })}
+            {filteredLegends.length === 0 ? (
+              <Text style={styles.legendNoResults}>No legends found</Text>
+            ) : null}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </View>
   );
 }
@@ -1606,29 +1669,95 @@ const styles = StyleSheet.create({
   legendPicker: {
     gap: 8,
   },
-  legendGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  legendChip: {
+  legendSelect: {
+    minHeight: 48,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.md,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
     backgroundColor: colors.card,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
   },
-  legendChipActive: {
+  legendSelectText: {
+    color: colors.cardForeground,
+    fontSize: 16,
+    fontWeight: "700",
+    flex: 1,
+  },
+  legendSelectScreen: {
+    flex: 1,
+    backgroundColor: colors.background,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    gap: 12,
+  },
+  legendSelectHeader: {
+    minHeight: 56,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  legendSelectClose: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  legendSelectTitle: {
+    color: colors.foreground,
+    fontSize: 22,
+    fontWeight: "800",
+  },
+  legendSearch: {
+    minHeight: 48,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.card,
+    color: colors.cardForeground,
+    paddingHorizontal: 14,
+    fontSize: 16,
+  },
+  legendSelectList: {
+    gap: 8,
+    paddingBottom: 24,
+  },
+  legendSelectOption: {
+    minHeight: 52,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.card,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  legendSelectOptionActive: {
     borderColor: colors.primary,
     backgroundColor: colors.primary,
   },
-  legendChipText: {
+  legendSelectOptionText: {
     color: colors.cardForeground,
+    fontSize: 16,
     fontWeight: "700",
+    flex: 1,
   },
-  legendChipTextActive: {
+  legendSelectOptionTextActive: {
     color: colors.primaryForeground,
+  },
+  legendNoResults: {
+    color: colors.mutedForeground,
+    paddingVertical: 24,
+    textAlign: "center",
+  },
+  pressed: {
+    opacity: 0.72,
   },
   disabled: {
     opacity: 0.45,

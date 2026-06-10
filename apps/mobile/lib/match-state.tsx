@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -8,6 +9,7 @@ import {
   type ReactNode,
   type SetStateAction
 } from "react";
+import * as SecureStore from "expo-secure-store";
 import { createMatch, type MatchState, type PlayerSide, type WinningPoint } from "@riftbound/core";
 import { LEGENDS } from "@riftbound/legends";
 
@@ -47,6 +49,15 @@ type MatchContextValue = {
 };
 
 const MatchContext = createContext<MatchContextValue | undefined>(undefined);
+const PLAYER_LEGEND_STORAGE_KEY = "riftbound.last-player-legend-id";
+const OPPONENT_LEGEND_STORAGE_KEY = "riftbound.last-opponent-legend-id";
+const secureStoreOptions = {
+  keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK
+};
+
+function isKnownLegendId(id: string | null): id is string {
+  return Boolean(id && LEGENDS.some((legend) => legend.id === id));
+}
 
 export function MatchProvider({ children }: { children: ReactNode }) {
   const [match, setMatch] = useState<MatchState>(() => createMatch());
@@ -58,14 +69,58 @@ export function MatchProvider({ children }: { children: ReactNode }) {
     startingPlayer: "player",
     winningPoint: 8
   });
-  const [playerLegendId, setPlayerLegendId] = useState(LEGENDS[0]?.id ?? "");
-  const [opponentLegendId, setOpponentLegendId] = useState(LEGENDS[1]?.id ?? LEGENDS[0]?.id ?? "");
+  const [playerLegendId, setPlayerLegendIdState] = useState(LEGENDS[0]?.id ?? "");
+  const [opponentLegendId, setOpponentLegendIdState] = useState(LEGENDS[1]?.id ?? LEGENDS[0]?.id ?? "");
   const [notes, setNotes] = useState("");
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [saveStatus, setSaveStatus] = useState("");
   const [matchStartedAt, setMatchStartedAt] = useState<number | null>(null);
   const [matchEndedAt, setMatchEndedAt] = useState<number | null>(null);
   const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadStoredLegends() {
+      try {
+        const [storedPlayerLegendId, storedOpponentLegendId] = await Promise.all([
+          SecureStore.getItemAsync(PLAYER_LEGEND_STORAGE_KEY, secureStoreOptions),
+          SecureStore.getItemAsync(OPPONENT_LEGEND_STORAGE_KEY, secureStoreOptions)
+        ]);
+
+        if (cancelled) return;
+        if (isKnownLegendId(storedPlayerLegendId)) {
+          setPlayerLegendIdState(storedPlayerLegendId);
+        }
+        if (isKnownLegendId(storedOpponentLegendId)) {
+          setOpponentLegendIdState(storedOpponentLegendId);
+        }
+      } catch {
+        await Promise.allSettled([
+          SecureStore.deleteItemAsync(PLAYER_LEGEND_STORAGE_KEY, secureStoreOptions),
+          SecureStore.deleteItemAsync(OPPONENT_LEGEND_STORAGE_KEY, secureStoreOptions)
+        ]);
+      }
+    }
+
+    void loadStoredLegends();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const setPlayerLegendId = useCallback((id: string) => {
+    if (!isKnownLegendId(id)) return;
+    setPlayerLegendIdState(id);
+    void SecureStore.setItemAsync(PLAYER_LEGEND_STORAGE_KEY, id, secureStoreOptions).catch(() => {});
+  }, []);
+
+  const setOpponentLegendId = useCallback((id: string) => {
+    if (!isKnownLegendId(id)) return;
+    setOpponentLegendIdState(id);
+    void SecureStore.setItemAsync(OPPONENT_LEGEND_STORAGE_KEY, id, secureStoreOptions).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (matchStartedAt || match.games.length === 0) return;
@@ -141,6 +196,8 @@ export function MatchProvider({ children }: { children: ReactNode }) {
       reviewOpen,
       saveState,
       saveStatus,
+      setOpponentLegendId,
+      setPlayerLegendId,
       setupDraft,
       setupOpen
     ]
