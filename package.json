@@ -13,6 +13,7 @@
     "build:web": "npm --workspace @riftbound/web run build",
     "test": "npm --workspace @riftbound/core run test",
     "typecheck": "npm --workspaces --if-present run typecheck",
+    "sync:legend-art": "node scripts/sync-legend-art.mjs",
     "db:types": "supabase gen types typescript --local > packages/db/src/database.types.ts",
     "android": "expo run:android",
     "ios": "expo run:ios"

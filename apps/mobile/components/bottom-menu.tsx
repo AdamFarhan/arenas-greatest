@@ -24,7 +24,7 @@ export function BottomMenu({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <View style={styles.menu}>
       {MENU_ITEMS.map((item) => {
-        const active = pathname === item.href || (pathname === "/" && item.href === "/play");
+        const active = pathname === item.href || pathname.startsWith(`${item.href}/`) || (pathname === "/" && item.href === "/play");
 
         return (
           <Pressable
