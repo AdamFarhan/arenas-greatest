@@ -61,7 +61,7 @@ export default function MatchDetailScreen() {
       if (!hasSupabaseConfig()) {
         setDetailStatus("failed");
         setDetailError(
-          "Cloud history is unavailable until Supabase environment variables are configured.",
+          "Saved match history is unavailable right now.",
         );
         return;
       }

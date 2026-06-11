@@ -131,7 +131,7 @@ export default function ScorerScreen() {
     if (!hasSupabaseConfig()) {
       setSaveState("failed");
       setSaveStatus(
-        "Cloud save is unavailable until Supabase env vars are configured.",
+        "Cloud save is unavailable right now. Try again later.",
       );
       return false;
     }
@@ -143,8 +143,8 @@ export default function ScorerScreen() {
 
     if (!userId) {
       setSaveState("failed");
-      setSaveStatus("Sign in before saving a cloud match.");
-      Alert.alert("Sign in required", "Sign in before saving a cloud match.");
+      setSaveStatus("Sign in before saving a match.");
+      Alert.alert("Sign in required", "Sign in before saving a match.");
       return false;
     }
 

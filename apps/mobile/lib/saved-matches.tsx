@@ -32,6 +32,7 @@ export function SavedMatchesProvider({ children }: { children: ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
   const fetchPromise = useRef<Promise<void> | null>(null);
+  const preloadedUserId = useRef<string | null>(null);
 
   const clearMatches = useCallback(() => {
     setMatches([]);
@@ -46,6 +47,7 @@ export function SavedMatchesProvider({ children }: { children: ReactNode }) {
     }
 
     if (!session.isSignedIn || !userId) {
+      preloadedUserId.current = null;
       clearMatches();
       setIsLoaded(true);
       setStatus("Sign in to view saved matches.");
@@ -65,7 +67,7 @@ export function SavedMatchesProvider({ children }: { children: ReactNode }) {
     fetchPromise.current = (async () => {
       if (!hasSupabaseConfig()) {
         setMatches([]);
-        setStatus("Cloud history is unavailable until Supabase environment variables are configured.");
+        setStatus("Saved match history is unavailable right now.");
         setIsLoaded(true);
         setLoadedUserId(userId);
         return;
@@ -89,7 +91,7 @@ export function SavedMatchesProvider({ children }: { children: ReactNode }) {
       }
 
       setMatches(data ?? []);
-      setStatus(data?.length ? "" : "No saved matches yet.");
+      setStatus(data?.length ? "" : "Save a match to start building your tracker.");
       setIsLoaded(true);
       setLoadedUserId(userId);
     })().finally(() => {
@@ -98,6 +100,19 @@ export function SavedMatchesProvider({ children }: { children: ReactNode }) {
 
     return fetchPromise.current;
   }, [session.getSupabaseAccessToken, session.isSignedIn, userId]);
+
+  useEffect(() => {
+    if (!session.isLoaded || !session.isSignedIn || !userId) {
+      return;
+    }
+
+    if (loadedUserId === userId || preloadedUserId.current === userId) {
+      return;
+    }
+
+    preloadedUserId.current = userId;
+    void refreshMatches();
+  }, [loadedUserId, refreshMatches, session.isLoaded, session.isSignedIn, userId]);
 
   const loadMatchesIfNeeded = useCallback(async () => {
     if (!isLoaded || loadedUserId !== userId) {
