@@ -52,19 +52,26 @@ export function BottomMenu({ onNavigate }: { onNavigate?: () => void }) {
 export function MenuScreen({
   title,
   subtitle,
-  children
+  children,
+  headerRight
 }: {
   title: string;
   subtitle: string;
   children: ReactNode;
+  headerRight?: ReactNode;
 }) {
   const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.screen}>
       <View style={[styles.content, { paddingTop: insets.top + 20 }]}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.subtitle}>{subtitle}</Text>
+        <View style={styles.header}>
+          <View style={styles.headerText}>
+            <Text style={styles.title}>{title}</Text>
+            <Text style={styles.subtitle}>{subtitle}</Text>
+          </View>
+          {headerRight ? <View style={styles.headerRight}>{headerRight}</View> : null}
+        </View>
         {children}
       </View>
       <BottomMenu />
@@ -82,6 +89,20 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 112,
     gap: 14
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12
+  },
+  headerText: {
+    flex: 1,
+    gap: 4
+  },
+  headerRight: {
+    alignItems: "flex-end",
+    justifyContent: "center"
   },
   title: {
     color: colors.foreground,

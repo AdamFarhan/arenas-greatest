@@ -19,6 +19,7 @@ type SavedMatchesContextValue = {
   refreshMatches: () => Promise<void>;
   loadMatchesIfNeeded: () => Promise<void>;
   upsertCachedMatch: (match: SavedMatchSummary) => void;
+  removeCachedMatch: (matchId: string) => void;
   clearMatches: () => void;
 };
 
@@ -138,6 +139,13 @@ export function SavedMatchesProvider({ children }: { children: ReactNode }) {
     [userId],
   );
 
+  const removeCachedMatch = useCallback((matchId: string) => {
+    setMatches((current) => current.filter((match) => match.id !== matchId));
+    setIsLoaded(false);
+    setLoadedUserId(null);
+    preloadedUserId.current = null;
+  }, []);
+
   const value = useMemo<SavedMatchesContextValue>(
     () => ({
       matches,
@@ -146,9 +154,10 @@ export function SavedMatchesProvider({ children }: { children: ReactNode }) {
       refreshMatches,
       loadMatchesIfNeeded,
       upsertCachedMatch,
+      removeCachedMatch,
       clearMatches,
     }),
-    [clearMatches, isLoaded, loadMatchesIfNeeded, matches, refreshMatches, status, upsertCachedMatch],
+    [clearMatches, isLoaded, loadMatchesIfNeeded, matches, refreshMatches, status, upsertCachedMatch, removeCachedMatch],
   );
 
   return <SavedMatchesContext.Provider value={value}>{children}</SavedMatchesContext.Provider>;

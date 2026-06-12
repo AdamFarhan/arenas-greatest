@@ -1,15 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Animated,
   Image,
+  Modal,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import { Stack, useLocalSearchParams } from "expo-router";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { getLegendById } from "@riftbound/legends";
 import {
+  deleteSavedMatch,
   getSavedMatch,
   type SavedMatchDetail,
   type SavedMatchSummary,
@@ -28,16 +33,22 @@ import { colors, radius } from "@/lib/theme";
 type DetailStatus = "idle" | "loading" | "loaded" | "failed";
 
 export default function MatchDetailScreen() {
+  const router = useRouter();
   const session = useSession();
   const { id } = useLocalSearchParams<{ id: string }>();
   const {
     matches,
     loadMatchesIfNeeded,
+    removeCachedMatch,
     status: savedMatchesStatus,
   } = useSavedMatches();
   const [detail, setDetail] = useState<SavedMatchDetail | null>(null);
   const [detailStatus, setDetailStatus] = useState<DetailStatus>("idle");
   const [detailError, setDetailError] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const cachedMatch = useMemo(
     () => matches.find((savedMatch) => savedMatch.id === id) ?? null,
     [id, matches],
@@ -106,19 +117,84 @@ export default function MatchDetailScreen() {
     session.isSignedIn,
   ]);
 
+  async function deleteMatch() {
+    if (!id || isDeleting) {
+      return;
+    }
+
+    setActionError("");
+    setDeleteConfirmOpen(false);
+
+    if (!hasSupabaseConfig()) {
+      const message = "Saved match history is unavailable right now.";
+      setActionError(message);
+      return;
+    }
+
+    if (!session.isSignedIn) {
+      const message = "Sign in to delete this match.";
+      setActionError(message);
+      return;
+    }
+
+    setIsDeleting(true);
+    const { error } = await deleteSavedMatch(
+      getMobileSupabase(session.getSupabaseAccessToken),
+      id,
+    );
+
+    if (error) {
+      setIsDeleting(false);
+      setActionError(error.message);
+      return;
+    }
+
+    removeCachedMatch(id);
+    router.replace("/matches");
+  }
+
+  function confirmDeleteMatch() {
+    if (isDeleting) {
+      return;
+    }
+
+    setSettingsOpen(false);
+    setDeleteConfirmOpen(true);
+  }
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <MenuScreen
         title="Match Details"
         subtitle="Review the full saved battle."
+        headerRight={
+          <MatchSettingsButton
+            isOpen={settingsOpen}
+            isDeleting={isDeleting}
+            onOpen={() => setSettingsOpen(true)}
+            onClose={() => setSettingsOpen(false)}
+            onDelete={confirmDeleteMatch}
+          />
+        }
       >
+        <DeleteMatchDialog
+          isOpen={deleteConfirmOpen}
+          isDeleting={isDeleting}
+          onCancel={() => setDeleteConfirmOpen(false)}
+          onConfirm={() => {
+            void deleteMatch();
+          }}
+        />
         <ScrollView contentContainerStyle={styles.content}>
           {!match && isLoading ? <DetailSkeleton /> : null}
 
           {match ? (
             <>
               <MatchHero match={match} />
+              {actionError ? (
+                <StatusCard title="Action failed" message={actionError} />
+              ) : null}
               {detailError ? (
                 <StatusCard title="Limited details" message={detailError} />
               ) : null}
@@ -142,6 +218,137 @@ export default function MatchDetailScreen() {
           ) : null}
         </ScrollView>
       </MenuScreen>
+    </>
+  );
+}
+
+function DeleteMatchDialog({
+  isOpen,
+  isDeleting,
+  onCancel,
+  onConfirm,
+}: {
+  isOpen: boolean;
+  isDeleting: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <Modal
+      visible={isOpen}
+      transparent
+      animationType="none"
+      onRequestClose={onCancel}
+    >
+      <View style={styles.dialogBackdrop}>
+        <View style={styles.dialogCard}>
+          <Text style={styles.dialogTitle}>Delete match?</Text>
+          <Text style={styles.dialogText}>
+            This removes the match and its game history. This cannot be undone.
+          </Text>
+          <View style={styles.dialogActions}>
+            <Pressable
+              accessibilityRole="button"
+              disabled={isDeleting}
+              onPress={onCancel}
+              style={({ pressed }) => [
+                styles.dialogButton,
+                styles.cancelButton,
+                pressed && !isDeleting && styles.pressed,
+                isDeleting && styles.disabled,
+              ]}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              disabled={isDeleting}
+              onPress={onConfirm}
+              style={({ pressed }) => [
+                styles.dialogButton,
+                styles.deleteButton,
+                pressed && !isDeleting && styles.pressed,
+                isDeleting && styles.disabled,
+              ]}
+            >
+              {isDeleting ? (
+                <ActivityIndicator size="small" color={colors.background} />
+              ) : (
+                <Text style={styles.deleteButtonText}>Delete Match</Text>
+              )}
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function MatchSettingsButton({
+  isOpen,
+  isDeleting,
+  onOpen,
+  onClose,
+  onDelete,
+}: {
+  isOpen: boolean;
+  isDeleting: boolean;
+  onOpen: () => void;
+  onClose: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Open match settings"
+        disabled={isDeleting}
+        onPress={onOpen}
+        style={({ pressed }) => [
+          styles.settingsButton,
+          pressed && !isDeleting && styles.pressed,
+          isDeleting && styles.disabled,
+        ]}
+      >
+        {isDeleting ? (
+          <ActivityIndicator size="small" color={colors.foreground} />
+        ) : (
+          <MaterialCommunityIcons
+            name="cog"
+            size={20}
+            color={colors.mutedForeground}
+          />
+        )}
+      </Pressable>
+      <Modal
+        visible={isOpen}
+        transparent
+        animationType="none"
+        onRequestClose={onClose}
+      >
+        <Pressable style={styles.menuBackdrop} onPress={onClose}>
+          <View style={styles.settingsMenu}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Delete match"
+              disabled={isDeleting}
+              onPress={onDelete}
+              style={({ pressed }) => [
+                styles.deleteMenuItem,
+                pressed && !isDeleting && styles.pressed,
+                isDeleting && styles.disabled,
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="trash-can-outline"
+                size={20}
+                color={colors.destructive}
+              />
+              <Text style={styles.deleteMenuText}>Delete Match</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
     </>
   );
 }
@@ -573,6 +780,107 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     padding: 16,
     gap: 10,
+  },
+  settingsButton: {
+    width: 38,
+    height: 38,
+    borderRadius: radius.md,
+    backgroundColor: "transparent",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  menuBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.28)",
+    alignItems: "flex-end",
+    paddingHorizontal: 16,
+    paddingTop: 96,
+  },
+  settingsMenu: {
+    minWidth: 190,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.card,
+    padding: 6,
+  },
+  deleteMenuItem: {
+    minHeight: 46,
+    borderRadius: radius.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 12,
+  },
+  deleteMenuText: {
+    color: colors.destructive,
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  pressed: {
+    opacity: 0.78,
+  },
+  disabled: {
+    opacity: 0.5,
+  },
+  dialogBackdrop: {
+    flex: 1,
+    backgroundColor: colors.backdrop,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+  },
+  dialogCard: {
+    width: "100%",
+    maxWidth: 360,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    backgroundColor: colors.card,
+    padding: 18,
+    gap: 14,
+  },
+  dialogTitle: {
+    color: colors.foreground,
+    fontSize: 22,
+    fontWeight: "900",
+  },
+  dialogText: {
+    color: colors.mutedForeground,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  dialogActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 10,
+    paddingTop: 4,
+  },
+  dialogButton: {
+    minHeight: 44,
+    borderRadius: radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 14,
+  },
+  cancelButton: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+  },
+  deleteButton: {
+    minWidth: 132,
+    backgroundColor: colors.destructive,
+  },
+  cancelButtonText: {
+    color: colors.foreground,
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  deleteButtonText: {
+    color: colors.background,
+    fontSize: 14,
+    fontWeight: "900",
   },
   section: {
     gap: 10,

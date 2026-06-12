@@ -223,6 +223,15 @@ export async function getSavedMatch(supabase: SupabaseClient, id: string) {
   };
 }
 
+export async function deleteSavedMatch(supabase: SupabaseClient, id: string) {
+  const { error } = await supabase
+    .from("matches")
+    .delete()
+    .eq("id", id);
+
+  return { error: error ? toDbError(error, "Could not delete match.") : null };
+}
+
 function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }

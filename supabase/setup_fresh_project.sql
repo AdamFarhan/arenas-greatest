@@ -85,6 +85,9 @@ create policy "Users can read own matches"
 create policy "Users can insert own matches"
   on public.matches for insert with check ((auth.jwt()->>'sub') = user_id);
 
+create policy "Users can delete own matches"
+  on public.matches for delete using ((auth.jwt()->>'sub') = user_id);
+
 create policy "Users can read own games"
   on public.games for select using (
     exists (
