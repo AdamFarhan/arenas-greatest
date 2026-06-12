@@ -4,7 +4,10 @@ import { useRouter } from "expo-router";
 import {
   Alert,
   Animated,
+  Dimensions,
+  Keyboard,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,7 +16,7 @@ import {
   Vibration,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   addScore,
   getActiveGame,
@@ -943,6 +946,8 @@ function ReviewModal({
   onSave: () => void;
   onReset: () => void;
 }) {
+  const insets = useSafeAreaInsets();
+  const [keyboardInset, setKeyboardInset] = useState(0);
   const saveButtonLabel =
     saveState === "saving"
       ? "Saving..."
@@ -952,10 +957,58 @@ function ReviewModal({
           ? "Saved"
           : "Save match";
 
+  useEffect(() => {
+    if (!open) {
+      setKeyboardInset(0);
+      return;
+    }
+
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSubscription = Keyboard.addListener(showEvent, (event) => {
+      const windowHeight = Dimensions.get("window").height;
+      const keyboardTop = event.endCoordinates.screenY;
+
+      setKeyboardInset(Math.max(0, windowHeight - keyboardTop));
+    });
+    const hideSubscription = Keyboard.addListener(hideEvent, () => {
+      setKeyboardInset(0);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, [open]);
+
+  if (!open) return null;
+
   return (
-    <Modal visible={open} animationType="slide" transparent>
-      <View style={styles.modalBackdrop}>
-        <ScrollView style={styles.reviewCard}>
+    <View
+      style={[
+        styles.modalBackdrop,
+        styles.reviewBackdrop,
+        keyboardInset > 0 && [
+          styles.reviewBackdropKeyboardOpen,
+          {
+            bottom: keyboardInset,
+            paddingTop: insets.top + 12,
+          },
+        ],
+      ]}
+    >
+      <View style={styles.reviewKeyboardAvoider}>
+        <ScrollView
+          style={styles.reviewCard}
+          contentContainerStyle={[
+            styles.reviewCardContent,
+            keyboardInset > 0 && styles.reviewCardContentKeyboardOpen,
+          ]}
+          keyboardShouldPersistTaps="handled"
+        >
           <Card>
             <Text style={styles.title}>Match complete</Text>
             <Text style={styles.muted}>
@@ -995,7 +1048,7 @@ function ReviewModal({
           </Card>
         </ScrollView>
       </View>
-    </Modal>
+    </View>
   );
 }
 
@@ -1474,6 +1527,14 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: colors.backdrop,
   },
+  reviewBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 30,
+    elevation: 30,
+  },
+  reviewBackdropKeyboardOpen: {
+    justifyContent: "flex-start",
+  },
   modalCardLayer: {
     position: "relative",
   },
@@ -1699,8 +1760,20 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "900",
   },
+  reviewKeyboardAvoider: {
+    width: "100%",
+    maxHeight: "100%",
+  },
   reviewCard: {
-    maxHeight: "92%",
+    width: "100%",
+  },
+  reviewCardContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+  },
+  reviewCardContentKeyboardOpen: {
+    justifyContent: "flex-start",
+    paddingBottom: 16,
   },
   legendPicker: {
     gap: 8,
