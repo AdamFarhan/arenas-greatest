@@ -19,6 +19,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   addScore,
+  endGameEarly,
   getActiveGame,
   manuallyAdjustScore,
   startGame,
@@ -71,6 +72,7 @@ export default function ScorerScreen() {
   } = useMatchState();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [newMatchOpen, setNewMatchOpen] = useState(false);
+  const [endGameOpen, setEndGameOpen] = useState(false);
   const [manualEndOpen, setManualEndOpen] = useState(false);
   const [manualResult, setManualResult] = useState<MatchResult>("tie");
 
@@ -107,6 +109,17 @@ export default function ScorerScreen() {
     setMatch((current) =>
       manuallyAdjustScore(current, player, Math.max(0, nextScore)),
     );
+  }
+
+  function endCurrentGame(winner: PlayerSide) {
+    const nextMatch = endGameEarly(match, winner);
+
+    setMatch(nextMatch);
+    setEndGameOpen(false);
+
+    if (!nextMatch.winner) {
+      setSetupOpen(true);
+    }
   }
 
   async function saveMatch(result: MatchResult | undefined = match.winner) {
@@ -303,10 +316,20 @@ export default function ScorerScreen() {
           setSettingsOpen(false);
           setManualEndOpen(true);
         }}
+        onEndGame={() => {
+          setSettingsOpen(false);
+          setEndGameOpen(true);
+        }}
         onNewMatch={() => {
           setSettingsOpen(false);
           setNewMatchOpen(true);
         }}
+        canEndGame={Boolean(activeGame && !match.winner)}
+      />
+      <EndGameModal
+        open={endGameOpen}
+        onClose={() => setEndGameOpen(false)}
+        onSelectWinner={endCurrentGame}
       />
       <ConfirmNewMatchModal
         open={newMatchOpen}
@@ -652,6 +675,10 @@ function HistoryModal({
       })) ?? []
     );
   }, [displayGame]);
+  const winningEntryId = useMemo(
+    () => getConcessionWinningEntryId(displayGame),
+    [displayGame],
+  );
 
   return (
     <Modal visible={visible} animationType="none" transparent>
@@ -675,7 +702,12 @@ function HistoryModal({
             {historyEntries.length ? (
               <ScoreHistoryTable
                 entries={historyEntries}
-                winningPoint={displayGame?.winningPoint}
+                winningPoint={
+                  displayGame?.endReason === "concession"
+                    ? undefined
+                    : displayGame?.winningPoint
+                }
+                winningEntryId={winningEntryId}
               />
             ) : (
               <Text style={styles.muted}>No events yet.</Text>
@@ -693,13 +725,17 @@ function HistoryModal({
 function MatchSettingsModal({
   open,
   onClose,
+  onEndGame,
   onEndMatch,
   onNewMatch,
+  canEndGame,
 }: {
   open: boolean;
   onClose: () => void;
+  onEndGame: () => void;
   onEndMatch: () => void;
   onNewMatch: () => void;
+  canEndGame: boolean;
 }) {
   const sheetProgress = useBottomSheetProgress(open);
   const visible = useModalVisibility(open);
@@ -720,8 +756,107 @@ function MatchSettingsModal({
           <Button variant="outline" onPress={onEndMatch}>
             End match
           </Button>
+          {canEndGame ? (
+            <Button variant="outline" onPress={onEndGame}>
+              End current game
+            </Button>
+          ) : null}
         </Animated.View>
       </Animated.View>
+    </Modal>
+  );
+}
+
+function EndGameModal({
+  open,
+  onClose,
+  onSelectWinner,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSelectWinner: (winner: PlayerSide) => void;
+}) {
+  const [selectedWinner, setSelectedWinner] = useState<PlayerSide | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setSelectedWinner(null);
+    }
+  }, [open]);
+
+  return (
+    <Modal visible={open} animationType="fade" transparent>
+      <View style={styles.modalBackdrop}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <View style={styles.endGameDialog}>
+          <Text style={styles.title}>Who won this game?</Text>
+          <Text style={styles.muted}>
+            Choose the game winner, then confirm. This ends the current game by
+            concession.
+          </Text>
+          <View style={styles.endGameChoiceGrid}>
+            {(["player", "opponent"] as const).map((winner) => {
+              const active = selectedWinner === winner;
+
+              return (
+                <Pressable
+                  key={winner}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  onPress={() => setSelectedWinner(winner)}
+                  style={({ pressed }) => [
+                    styles.endGameChoice,
+                    active && styles.endGameChoiceActive,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name={winner === "player" ? "account" : "account-group"}
+                    size={30}
+                    color={
+                      active ? colors.primaryForeground : colors.mutedForeground
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.endGameChoiceTitle,
+                      active && styles.endGameChoiceTitleActive,
+                    ]}
+                  >
+                    {winner === "player" ? "You won" : "Opponent won"}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            disabled={!selectedWinner}
+            onPress={() => {
+              if (selectedWinner) {
+                onSelectWinner(selectedWinner);
+              }
+            }}
+            style={({ pressed }) => [
+              styles.endGameConfirmButton,
+              !selectedWinner && styles.disabled,
+              pressed && selectedWinner && styles.pressed,
+            ]}
+          >
+            <Text style={styles.endGameConfirmText}>Confirm game result</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            onPress={onClose}
+            style={({ pressed }) => [
+              styles.endGameCancelButton,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text style={styles.endGameCancelText}>Cancel</Text>
+          </Pressable>
+        </View>
+      </View>
     </Modal>
   );
 }
@@ -1140,6 +1275,14 @@ function getResultLabel(result: MatchResult) {
   return "Tie";
 }
 
+function getConcessionWinningEntryId(game: MatchState["games"][number] | undefined) {
+  if (!game || game.endReason !== "concession" || !game.winner) {
+    return undefined;
+  }
+
+  return [...game.events].reverse().find((event) => event.player === game.winner)?.id;
+}
+
 function useBottomSheetProgress(open: boolean) {
   const progress = useMemo(() => new Animated.Value(open ? 1 : 0), []);
 
@@ -1462,6 +1605,74 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 16,
     backgroundColor: colors.backdrop,
+  },
+  endGameDialog: {
+    width: "100%",
+    maxWidth: 420,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.xl,
+    backgroundColor: colors.card,
+    padding: 18,
+    gap: 14,
+  },
+  endGameChoiceGrid: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  endGameChoice: {
+    flex: 1,
+    minHeight: 104,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    backgroundColor: colors.background,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: 12,
+  },
+  endGameChoiceActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary,
+  },
+  endGameChoiceTitle: {
+    color: colors.foreground,
+    fontSize: 15,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  endGameChoiceTitleActive: {
+    color: colors.primaryForeground,
+  },
+  endGameConfirmButton: {
+    minHeight: 54,
+    borderRadius: radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primary,
+    paddingHorizontal: 14,
+  },
+  endGameConfirmText: {
+    color: colors.primaryForeground,
+    fontSize: 15,
+    fontWeight: "900",
+    textTransform: "uppercase",
+  },
+  endGameCancelButton: {
+    minHeight: 52,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.card,
+    paddingHorizontal: 14,
+  },
+  endGameCancelText: {
+    color: colors.foreground,
+    fontSize: 15,
+    fontWeight: "800",
   },
   reviewBackdrop: {
     ...StyleSheet.absoluteFillObject,

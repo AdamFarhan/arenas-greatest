@@ -33,6 +33,7 @@ create table public.games (
   starting_player text not null check (starting_player in ('player', 'opponent')),
   winning_point integer not null check (winning_point in (8, 9, 10)),
   winner text not null check (winner in ('player', 'opponent')),
+  end_reason text not null default 'points' check (end_reason in ('points', 'concession')),
   player_score integer not null default 0,
   opponent_score integer not null default 0,
   created_at timestamptz not null default now(),

@@ -15,6 +15,7 @@ export type ScoreHistoryEntry = {
 type ScoreHistoryTableProps = {
   entries: ScoreHistoryEntry[];
   winningPoint?: number;
+  winningEntryId?: string;
   playerLabel?: string;
   opponentLabel?: string;
 };
@@ -43,6 +44,7 @@ const SCORE_ENTRY_META: Record<
 export function ScoreHistoryTable({
   entries,
   winningPoint,
+  winningEntryId,
   playerLabel = "You",
   opponentLabel = "Opponent",
 }: ScoreHistoryTableProps) {
@@ -60,10 +62,22 @@ export function ScoreHistoryTable({
         {entries.map((entry) => (
           <View key={entry.id} style={styles.row}>
             <View style={[styles.cell, styles.leftCell]}>
-              {entry.player === "player" ? <ScoreEntry entry={entry} winningPoint={winningPoint} /> : null}
+              {entry.player === "player" ? (
+                <ScoreEntry
+                  entry={entry}
+                  winningPoint={winningPoint}
+                  winningEntryId={winningEntryId}
+                />
+              ) : null}
             </View>
             <View style={[styles.cell, styles.rightCell]}>
-              {entry.player === "opponent" ? <ScoreEntry entry={entry} winningPoint={winningPoint} /> : null}
+              {entry.player === "opponent" ? (
+                <ScoreEntry
+                  entry={entry}
+                  winningPoint={winningPoint}
+                  winningEntryId={winningEntryId}
+                />
+              ) : null}
             </View>
           </View>
         ))}
@@ -72,8 +86,18 @@ export function ScoreHistoryTable({
   );
 }
 
-function ScoreEntry({ entry, winningPoint }: { entry: ScoreHistoryEntry; winningPoint?: number }) {
-  const isWinningPoint = winningPoint !== undefined && entry.scoreValue >= winningPoint;
+function ScoreEntry({
+  entry,
+  winningPoint,
+  winningEntryId,
+}: {
+  entry: ScoreHistoryEntry;
+  winningPoint?: number;
+  winningEntryId?: string;
+}) {
+  const isWinningPoint = winningEntryId
+    ? entry.id === winningEntryId
+    : winningPoint !== undefined && entry.scoreValue >= winningPoint;
 
   if (entry.type === "manual_adjustment") {
     return (

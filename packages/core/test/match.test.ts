@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   addScore,
   createMatch,
+  endGameEarly,
   getActiveGame,
   getCurrentGameHistory,
   manuallyAdjustScore,
@@ -25,7 +26,21 @@ describe("match logic", () => {
     }
 
     expect(match.games[0]?.winner).toBe("opponent");
+    expect(match.games[0]?.endReason).toBe("points");
     expect(match.wins.opponent).toBe(1);
+  });
+
+  it("ends an active game early by concession", () => {
+    let match = startGame(createMatch("match-1"), "player", 8);
+    match = addScore(match, "player", "holding");
+    match = addScore(match, "opponent", "ability");
+
+    const updated = endGameEarly(match, "opponent");
+
+    expect(updated.games[0]?.winner).toBe("opponent");
+    expect(updated.games[0]?.endReason).toBe("concession");
+    expect(updated.wins.opponent).toBe(1);
+    expect(() => getActiveGame(updated)).toThrow("There is no active game.");
   });
 
   it("ends the match after two game wins", () => {
@@ -43,6 +58,17 @@ describe("match logic", () => {
 
     expect(match.winner).toBe("player");
     expect(match.wins.player).toBe(2);
+  });
+
+  it("ends the match after a second concession game win", () => {
+    let match = startGame(createMatch("match-1"), "player", 8);
+    match = endGameEarly(match, "player");
+    match = startGame(match, "opponent", 9);
+    match = endGameEarly(match, "player");
+
+    expect(match.winner).toBe("player");
+    expect(match.wins.player).toBe(2);
+    expect(match.games[1]?.endReason).toBe("concession");
   });
 
   it("logs manual score edits as adjustment events", () => {

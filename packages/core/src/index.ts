@@ -2,6 +2,7 @@ export type PlayerSide = "player" | "opponent";
 export type ScoreReason = "holding" | "conquering" | "ability";
 export type ScoreEventType = ScoreReason | "manual_adjustment";
 export type WinningPoint = 8 | 9 | 10;
+export type GameEndReason = "points" | "concession";
 
 export type ScoreEvent = {
   id: string;
@@ -28,6 +29,7 @@ export type GameState = {
   };
   events: ScoreEvent[];
   winner?: PlayerSide;
+  endReason?: GameEndReason;
 };
 
 export type MatchState = {
@@ -165,6 +167,16 @@ export function manuallyAdjustScore(
   });
 }
 
+export function endGameEarly(match: MatchState, winner: PlayerSide): MatchState {
+  const game = getActiveGame(match);
+
+  return updateActiveGame(match, {
+    ...game,
+    winner,
+    endReason: "concession"
+  });
+}
+
 export function getCurrentGameHistory(game: GameState): HistoryRow[] {
   return game.events.map((event) => ({
     id: event.id,
@@ -221,12 +233,16 @@ function updateActiveGame(match: MatchState, updatedGame: GameState): MatchState
 }
 
 function resolveGameWinner(game: GameState): GameState {
+  if (game.winner) {
+    return game;
+  }
+
   if (game.score.player >= game.winningPoint) {
-    return { ...game, winner: "player" };
+    return { ...game, winner: "player", endReason: "points" };
   }
 
   if (game.score.opponent >= game.winningPoint) {
-    return { ...game, winner: "opponent" };
+    return { ...game, winner: "opponent", endReason: "points" };
   }
 
   return game;

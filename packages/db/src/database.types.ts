@@ -74,6 +74,7 @@ export type Database = {
           starting_player: "player" | "opponent";
           winning_point: 8 | 9 | 10;
           winner: "player" | "opponent";
+          end_reason: "points" | "concession";
           player_score: number;
           opponent_score: number;
           created_at: string;
@@ -85,6 +86,7 @@ export type Database = {
           starting_player: "player" | "opponent";
           winning_point: 8 | 9 | 10;
           winner: "player" | "opponent";
+          end_reason?: "points" | "concession";
           player_score: number;
           opponent_score: number;
           created_at?: string;

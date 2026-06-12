@@ -427,8 +427,8 @@ function GamesSection({ match }: { match: SavedMatchDetail }) {
       <Text style={styles.sectionTitle}>Game History</Text>
       {match.games.map((game) => {
         const entries = toScoreHistoryEntries(game.events);
-        const winnerLabel =
-          game.winner === "player" ? "You won" : "Opponent won";
+        const winnerLabel = getGameResultLabel(game);
+        const winningEntryId = getConcessionWinningEntryId(game);
 
         return (
           <View key={game.id} style={styles.gameCard}>
@@ -455,7 +455,12 @@ function GamesSection({ match }: { match: SavedMatchDetail }) {
             {entries.length ? (
               <ScoreHistoryTable
                 entries={entries}
-                winningPoint={game.winning_point}
+                winningPoint={
+                  game.end_reason === "concession"
+                    ? undefined
+                    : game.winning_point
+                }
+                winningEntryId={winningEntryId}
               />
             ) : (
               <Text style={styles.muted}>
@@ -682,6 +687,26 @@ function toScoreHistoryEntries(
     previousScore: event.previous_score ?? undefined,
     adjustedScore: event.adjusted_score ?? undefined,
   }));
+}
+
+function getGameResultLabel(game: SavedMatchDetail["games"][number]) {
+  if (game.end_reason === "concession") {
+    return game.winner === "player" ? "Opponent conceded" : "You conceded";
+  }
+
+  return game.winner === "player" ? "You won" : "Opponent won";
+}
+
+function getConcessionWinningEntryId(game: SavedMatchDetail["games"][number]) {
+  if (game.end_reason !== "concession") {
+    return undefined;
+  }
+
+  const winner = game.winner;
+
+  return [...game.events]
+    .reverse()
+    .find((event) => event.player_side === winner)?.id;
 }
 
 function getMatchResult(match: SavedMatchSummary) {

@@ -5,6 +5,7 @@ type PlayerSide = "player" | "opponent";
 type MatchResult = PlayerSide | "tie";
 type ScoreEventType = "holding" | "conquering" | "ability" | "manual_adjustment";
 type WinningPoint = 8 | 9 | 10;
+type GameEndReason = "points" | "concession";
 
 type MatchStateLike = {
   id: string;
@@ -30,6 +31,7 @@ type MatchStateLike = {
       adjustedScore?: number;
     }>;
     winner?: PlayerSide;
+    endReason?: GameEndReason;
   }>;
   wins: {
     player: number;
@@ -107,6 +109,7 @@ export function buildCompletedMatchPayload(
         starting_player: game.startingPlayer,
         winning_point: game.winningPoint,
         winner: game.winner!,
+        end_reason: game.endReason ?? "points",
         player_score: game.score.player,
         opponent_score: game.score.opponent
       },
