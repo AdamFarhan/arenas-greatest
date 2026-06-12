@@ -60,11 +60,8 @@ export default function ScorerScreen() {
     setupDraft,
     setSetupDraft,
     playerLegendId,
-    setPlayerLegendId,
     opponentLegendId,
-    setOpponentLegendId,
     notes,
-    setNotes,
     saveState,
     setSaveState,
     setSaveStatus,
@@ -321,24 +318,20 @@ export default function ScorerScreen() {
           setSetupOpen(true);
         }}
       />
-      <ManualEndModal
+      <MatchEntryModal
         open={manualEndOpen}
+        mode="manual"
+        match={match}
         result={manualResult}
-        playerLegendId={playerLegendId}
-        opponentLegendId={opponentLegendId}
-        notes={notes}
         onResultChange={setManualResult}
-        onPlayerLegendChange={setPlayerLegendId}
-        onOpponentLegendChange={setOpponentLegendId}
-        onNotesChange={setNotes}
-        onClose={() => setManualEndOpen(false)}
-        onDiscard={() => {
-          setManualEndOpen(false);
-          resetMatch();
-        }}
+        onBackdropPress={() => setManualEndOpen(false)}
         onSave={() =>
           saveMatchAndReturnToPlay(manualResult, () => setManualEndOpen(false))
         }
+        onSecondaryAction={() => {
+          setManualEndOpen(false);
+          resetMatch();
+        }}
       />
       <ManualEditModal
         player={manualEditPlayer}
@@ -350,18 +343,12 @@ export default function ScorerScreen() {
         onClose={() => setManualEditPlayer(null)}
         onAdjust={(player, scoreValue) => adjustScore(player, scoreValue)}
       />
-      <ReviewModal
+      <MatchEntryModal
         open={reviewOpen}
+        mode="completed"
         match={match}
-        playerLegendId={playerLegendId}
-        opponentLegendId={opponentLegendId}
-        notes={notes}
-        saveState={saveState}
-        onPlayerLegendChange={setPlayerLegendId}
-        onOpponentLegendChange={setOpponentLegendId}
-        onNotesChange={setNotes}
         onSave={saveMatchAndReturnToPlay}
-        onReset={resetMatch}
+        onSecondaryAction={resetMatch}
       />
       <BottomMenu />
     </View>
@@ -777,90 +764,6 @@ function ConfirmNewMatchModal({
   );
 }
 
-function ManualEndModal({
-  open,
-  result,
-  playerLegendId,
-  opponentLegendId,
-  notes,
-  onResultChange,
-  onPlayerLegendChange,
-  onOpponentLegendChange,
-  onNotesChange,
-  onClose,
-  onDiscard,
-  onSave,
-}: {
-  open: boolean;
-  result: MatchResult;
-  playerLegendId: string;
-  opponentLegendId: string;
-  notes: string;
-  onResultChange: (result: MatchResult) => void;
-  onPlayerLegendChange: (id: string) => void;
-  onOpponentLegendChange: (id: string) => void;
-  onNotesChange: (notes: string) => void;
-  onClose: () => void;
-  onDiscard: () => void;
-  onSave: () => void | Promise<void>;
-}) {
-  const sheetProgress = useBottomSheetProgress(open);
-  const visible = useModalVisibility(open);
-
-  return (
-    <Modal visible={visible} animationType="none" transparent>
-      <Animated.View style={[styles.sheetBackdrop, { opacity: sheetProgress }]}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <Animated.View
-          style={[styles.manualEndSheet, getSheetAnimationStyle(sheetProgress)]}
-        >
-          <View style={styles.sheetHandle} />
-          <ScrollView style={styles.manualEndScroll}>
-            <View style={styles.manualEndContent}>
-              <Text style={styles.title}>End match</Text>
-              <Text style={styles.muted}>
-                Save the current match with a manual result, or discard it.
-              </Text>
-              <Text style={styles.sectionLabel}>Result</Text>
-              <View style={styles.resultGrid}>
-                {(["player", "opponent", "tie"] as const).map((option) => (
-                  <Button
-                    key={option}
-                    variant={result === option ? "primary" : "outline"}
-                    onPress={() => onResultChange(option)}
-                  >
-                    {getResultLabel(option)}
-                  </Button>
-                ))}
-              </View>
-              <LegendPicker
-                label="Your legend"
-                value={playerLegendId}
-                onChange={onPlayerLegendChange}
-              />
-              <LegendPicker
-                label="Opponent legend"
-                value={opponentLegendId}
-                onChange={onOpponentLegendChange}
-              />
-              <Field
-                value={notes}
-                onChangeText={onNotesChange}
-                placeholder="Match notes"
-                multiline
-              />
-              <Button onPress={onSave}>Save match</Button>
-              <Button variant="outline" onPress={onDiscard}>
-                Discard match
-              </Button>
-            </View>
-          </ScrollView>
-        </Animated.View>
-      </Animated.View>
-    </Modal>
-  );
-}
-
 function ManualEditModal({
   player,
   activeScore,
@@ -921,33 +824,37 @@ function ManualEditModal({
   );
 }
 
-function ReviewModal({
+function MatchEntryModal({
   open,
+  mode,
   match,
-  playerLegendId,
-  opponentLegendId,
-  notes,
-  saveState,
-  onPlayerLegendChange,
-  onOpponentLegendChange,
-  onNotesChange,
+  result,
+  onResultChange,
+  onBackdropPress,
   onSave,
-  onReset,
+  onSecondaryAction,
 }: {
   open: boolean;
+  mode: "completed" | "manual";
   match: MatchState;
-  playerLegendId: string;
-  opponentLegendId: string;
-  notes: string;
-  saveState: "idle" | "saving" | "saved" | "failed";
-  onPlayerLegendChange: (id: string) => void;
-  onOpponentLegendChange: (id: string) => void;
-  onNotesChange: (notes: string) => void;
-  onSave: () => void;
-  onReset: () => void;
+  result?: MatchResult;
+  onResultChange?: (result: MatchResult) => void;
+  onBackdropPress?: () => void;
+  onSave: () => void | Promise<void>;
+  onSecondaryAction: () => void;
 }) {
+  const {
+    playerLegendId,
+    setPlayerLegendId,
+    opponentLegendId,
+    setOpponentLegendId,
+    notes,
+    setNotes,
+    saveState,
+  } = useMatchState();
   const insets = useSafeAreaInsets();
   const [keyboardInset, setKeyboardInset] = useState(0);
+  const isManual = mode === "manual";
   const saveButtonLabel =
     saveState === "saving"
       ? "Saving..."
@@ -956,6 +863,15 @@ function ReviewModal({
         : saveState === "saved"
           ? "Saved"
           : "Save match";
+  const title = isManual ? "End match" : "Match complete";
+  const subtitle = isManual
+    ? "Save the current match with a manual result, or discard it."
+    : `${match.winner === "player" ? "You won" : "Opponent won"} ${match.wins.player}-${match.wins.opponent}`;
+  const secondaryButtonLabel = isManual
+    ? "Discard match"
+    : saveState === "saved"
+      ? "Finish"
+      : "Finish without saving";
 
   useEffect(() => {
     if (!open) {
@@ -1000,6 +916,13 @@ function ReviewModal({
         ],
       ]}
     >
+      {onBackdropPress ? (
+        <Pressable
+          accessibilityLabel="Close manual match entry"
+          style={StyleSheet.absoluteFill}
+          onPress={onBackdropPress}
+        />
+      ) : null}
       <View style={styles.reviewKeyboardAvoider}>
         <ScrollView
           style={styles.reviewCard}
@@ -1010,24 +933,37 @@ function ReviewModal({
           keyboardShouldPersistTaps="handled"
         >
           <Card>
-            <Text style={styles.title}>Match complete</Text>
-            <Text style={styles.muted}>
-              {match.winner === "player" ? "You won" : "Opponent won"}{" "}
-              {match.wins.player}-{match.wins.opponent}
-            </Text>
+            <Text style={styles.title}>{title}</Text>
+            <Text style={styles.muted}>{subtitle}</Text>
+            {isManual && result && onResultChange ? (
+              <>
+                <Text style={styles.sectionLabel}>Result</Text>
+                <View style={styles.resultGrid}>
+                  {(["player", "opponent", "tie"] as const).map((option) => (
+                    <Button
+                      key={option}
+                      variant={result === option ? "primary" : "outline"}
+                      onPress={() => onResultChange(option)}
+                    >
+                      {getResultLabel(option)}
+                    </Button>
+                  ))}
+                </View>
+              </>
+            ) : null}
             <LegendPicker
               label="Your legend"
               value={playerLegendId}
-              onChange={onPlayerLegendChange}
+              onChange={setPlayerLegendId}
             />
             <LegendPicker
               label="Opponent legend"
               value={opponentLegendId}
-              onChange={onOpponentLegendChange}
+              onChange={setOpponentLegendId}
             />
             <Field
               value={notes}
-              onChangeText={onNotesChange}
+              onChangeText={setNotes}
               placeholder="Match notes"
               multiline
             />
@@ -1040,10 +976,10 @@ function ReviewModal({
             </Button>
             <Button
               variant="outline"
-              onPress={onReset}
+              onPress={onSecondaryAction}
               disabled={saveState === "saving"}
             >
-              {saveState === "saved" ? "Finish" : "Finish without saving"}
+              {secondaryButtonLabel}
             </Button>
           </Card>
         </ScrollView>
@@ -1698,27 +1634,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: 16,
     gap: 12,
-  },
-  manualEndSheet: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    maxHeight: "86%",
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    backgroundColor: colors.card,
-    borderTopWidth: 1,
-    borderColor: colors.border,
-    padding: 16,
-    gap: 12,
-  },
-  manualEndScroll: {
-    maxHeight: "100%",
-  },
-  manualEndContent: {
-    gap: 12,
-    paddingBottom: 4,
   },
   resultGrid: {
     flexDirection: "row",
