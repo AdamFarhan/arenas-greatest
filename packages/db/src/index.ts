@@ -30,6 +30,7 @@ type MatchStateLike = {
       previousScore?: number;
       adjustedScore?: number;
     }>;
+    durationSeconds?: number;
     winner?: PlayerSide;
     endReason?: GameEndReason;
   }>;
@@ -111,7 +112,8 @@ export function buildCompletedMatchPayload(
         winner: game.winner!,
         end_reason: game.endReason ?? "points",
         player_score: game.score.player,
-        opponent_score: game.score.opponent
+        opponent_score: game.score.opponent,
+        duration_seconds: game.durationSeconds ?? null
       },
       events: game.events.map((event) => ({
         ...buildScoreEventInsert(event)

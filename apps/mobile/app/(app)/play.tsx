@@ -96,23 +96,33 @@ export default function ScorerScreen() {
 
   function confirmGameSetup() {
     setMatch((current) =>
-      startGame(current, setupDraft.startingPlayer, setupDraft.winningPoint),
+      startGame(
+        current,
+        setupDraft.startingPlayer,
+        setupDraft.winningPoint,
+        new Date().toISOString(),
+      ),
     );
     setSetupOpen(false);
   }
 
   function score(player: PlayerSide, reason: ScoreReason) {
-    setMatch((current) => addScore(current, player, reason));
+    setMatch((current) => addScore(current, player, reason, new Date().toISOString()));
   }
 
   function adjustScore(player: PlayerSide, nextScore: number) {
     setMatch((current) =>
-      manuallyAdjustScore(current, player, Math.max(0, nextScore)),
+      manuallyAdjustScore(
+        current,
+        player,
+        Math.max(0, nextScore),
+        new Date().toISOString(),
+      ),
     );
   }
 
   function endCurrentGame(winner: PlayerSide) {
-    const nextMatch = endGameEarly(match, winner);
+    const nextMatch = endGameEarly(match, winner, new Date().toISOString());
 
     setMatch(nextMatch);
     setEndGameOpen(false);

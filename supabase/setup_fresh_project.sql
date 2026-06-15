@@ -36,6 +36,7 @@ create table public.games (
   end_reason text not null default 'points' check (end_reason in ('points', 'concession')),
   player_score integer not null default 0,
   opponent_score integer not null default 0,
+  duration_seconds integer check (duration_seconds >= 0),
   created_at timestamptz not null default now(),
   unique (match_id, game_number)
 );

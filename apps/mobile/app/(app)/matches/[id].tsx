@@ -440,6 +440,11 @@ function GamesSection({ match }: { match: SavedMatchDetail }) {
                   {game.starting_player === "player" ? "you" : "opponent"} · To{" "}
                   {game.winning_point}
                 </Text>
+                {game.duration_seconds !== null ? (
+                  <Text style={styles.metaText}>
+                    Duration {formatElapsed(game.duration_seconds)}
+                  </Text>
+                ) : null}
               </View>
               <View style={styles.gameScoreBlock}>
                 <Text style={styles.gameScore}>

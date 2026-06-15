@@ -28,6 +28,9 @@ export type GameState = {
     opponent: number;
   };
   events: ScoreEvent[];
+  startedAt?: string;
+  endedAt?: string;
+  durationSeconds?: number;
   winner?: PlayerSide;
   endReason?: GameEndReason;
 };
@@ -68,7 +71,8 @@ export function createMatch(id = cryptoRandomId()): MatchState {
 export function startGame(
   match: MatchState,
   startingPlayer: PlayerSide,
-  winningPoint: WinningPoint
+  winningPoint: WinningPoint,
+  startedAt?: string
 ): MatchState {
   if (match.winner) {
     throw new Error("Cannot start a new game after the match is complete.");
@@ -78,21 +82,24 @@ export function startGame(
     throw new Error("Cannot start a new game before the active game is complete.");
   }
 
+  const nextGame: GameState = {
+    gameNumber: match.games.length + 1,
+    startingPlayer,
+    winningPoint,
+    score: {
+      player: 0,
+      opponent: 0
+    },
+    events: []
+  };
+
+  if (startedAt) {
+    nextGame.startedAt = startedAt;
+  }
+
   return {
     ...match,
-    games: [
-      ...match.games,
-      {
-        gameNumber: match.games.length + 1,
-        startingPlayer,
-        winningPoint,
-        score: {
-          player: 0,
-          opponent: 0
-        },
-        events: []
-      }
-    ]
+    games: [...match.games, nextGame]
   };
 }
 
@@ -167,13 +174,18 @@ export function manuallyAdjustScore(
   });
 }
 
-export function endGameEarly(match: MatchState, winner: PlayerSide): MatchState {
+export function endGameEarly(
+  match: MatchState,
+  winner: PlayerSide,
+  endedAt = new Date().toISOString()
+): MatchState {
   const game = getActiveGame(match);
 
   return updateActiveGame(match, {
     ...game,
     winner,
-    endReason: "concession"
+    endReason: "concession",
+    ...getGameTimingUpdate(game.startedAt, endedAt)
   });
 }
 
@@ -238,14 +250,49 @@ function resolveGameWinner(game: GameState): GameState {
   }
 
   if (game.score.player >= game.winningPoint) {
-    return { ...game, winner: "player", endReason: "points" };
+    return {
+      ...game,
+      winner: "player",
+      endReason: "points",
+      ...getGameTimingUpdate(game.startedAt, getLastEventCreatedAt(game))
+    };
   }
 
   if (game.score.opponent >= game.winningPoint) {
-    return { ...game, winner: "opponent", endReason: "points" };
+    return {
+      ...game,
+      winner: "opponent",
+      endReason: "points",
+      ...getGameTimingUpdate(game.startedAt, getLastEventCreatedAt(game))
+    };
   }
 
   return game;
+}
+
+function getLastEventCreatedAt(game: GameState): string | undefined {
+  return game.events.at(-1)?.createdAt;
+}
+
+function getGameTimingUpdate(
+  startedAt: string | undefined,
+  endedAt: string | undefined
+): Pick<GameState, "endedAt" | "durationSeconds"> {
+  if (!startedAt || !endedAt) {
+    return {};
+  }
+
+  const startedTime = Date.parse(startedAt);
+  const endedTime = Date.parse(endedAt);
+
+  if (Number.isNaN(startedTime) || Number.isNaN(endedTime)) {
+    return { endedAt };
+  }
+
+  return {
+    endedAt,
+    durationSeconds: Math.max(0, Math.floor((endedTime - startedTime) / 1000))
+  };
 }
 
 function getEventLabel(event: ScoreEvent): string {

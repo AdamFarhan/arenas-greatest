@@ -30,17 +30,52 @@ describe("match logic", () => {
     expect(match.wins.opponent).toBe(1);
   });
 
+  it("stores the game start time", () => {
+    const startedAt = "2026-06-06T12:00:00.000Z";
+    const match = startGame(createMatch("match-1"), "player", 8, startedAt);
+
+    expect(match.games[0]?.startedAt).toBe(startedAt);
+  });
+
+  it("tracks duration when a game ends at the selected winning point", () => {
+    const startedAt = "2026-06-06T12:00:00.000Z";
+    let match = startGame(createMatch("match-1"), "player", 8, startedAt);
+
+    for (let i = 0; i < 7; i += 1) {
+      match = addScore(match, "opponent", "ability", "2026-06-06T12:05:00.000Z");
+    }
+
+    match = addScore(match, "opponent", "ability", "2026-06-06T12:07:30.000Z");
+
+    expect(match.games[0]?.endedAt).toBe("2026-06-06T12:07:30.000Z");
+    expect(match.games[0]?.durationSeconds).toBe(450);
+  });
+
   it("ends an active game early by concession", () => {
-    let match = startGame(createMatch("match-1"), "player", 8);
+    let match = startGame(createMatch("match-1"), "player", 8, "2026-06-06T12:00:00.000Z");
     match = addScore(match, "player", "holding");
     match = addScore(match, "opponent", "ability");
 
-    const updated = endGameEarly(match, "opponent");
+    const updated = endGameEarly(match, "opponent", "2026-06-06T12:03:15.000Z");
 
     expect(updated.games[0]?.winner).toBe("opponent");
     expect(updated.games[0]?.endReason).toBe("concession");
+    expect(updated.games[0]?.endedAt).toBe("2026-06-06T12:03:15.000Z");
+    expect(updated.games[0]?.durationSeconds).toBe(195);
     expect(updated.wins.opponent).toBe(1);
     expect(() => getActiveGame(updated)).toThrow("There is no active game.");
+  });
+
+  it("leaves duration unset when a game has no start time", () => {
+    let match = startGame(createMatch("match-1"), "player", 8);
+
+    for (let i = 0; i < 8; i += 1) {
+      match = addScore(match, "player", "holding", "2026-06-06T12:07:30.000Z");
+    }
+
+    expect(match.games[0]?.winner).toBe("player");
+    expect(match.games[0]?.endedAt).toBeUndefined();
+    expect(match.games[0]?.durationSeconds).toBeUndefined();
   });
 
   it("ends the match after two game wins", () => {

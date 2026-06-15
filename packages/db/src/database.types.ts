@@ -77,6 +77,7 @@ export type Database = {
           end_reason: "points" | "concession";
           player_score: number;
           opponent_score: number;
+          duration_seconds: number | null;
           created_at: string;
         };
         Insert: {
@@ -89,6 +90,7 @@ export type Database = {
           end_reason?: "points" | "concession";
           player_score: number;
           opponent_score: number;
+          duration_seconds?: number | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["games"]["Insert"]>;
