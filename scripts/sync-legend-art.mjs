@@ -66,7 +66,9 @@ async function main() {
   for (const set of targetSets) {
     nextKnownSets.set(set.setId, { setId: set.setId, name: set.name, publishedOn: set.publishedOn });
     const cards = await fetchAllCards(set.setId);
-    const legendCards = cards.filter((card) => card.classification?.type === "Legend");
+    const legendCards = cards
+      .filter((card) => card.classification?.type === "Legend")
+      .filter((card) => isCanonicalLegendCard(card, set.setId));
     const bestCardsByName = chooseBestLegendCards(legendCards);
 
     for (const card of bestCardsByName.values()) {
@@ -235,7 +237,12 @@ function chooseBestLegendCards(cards) {
 }
 
 function normalizeCardLegendName(name) {
-  return name.replace(/\s+\([^)]+\)$/i, "");
+  return name.replace(/\s+\([^)]+\)$/i, "").replace(/^Yordle,\s+/i, "");
+}
+
+function isCanonicalLegendCard(card, setId) {
+  if (setId !== "VEN") return true;
+  return normalizeCardLegendName(card.name).includes(" - ");
 }
 
 function scoreCard(card) {

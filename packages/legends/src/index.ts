@@ -6,6 +6,8 @@ export type Legend = {
 
 export const LEGENDS: Legend[] = [
   { id: "ahri-nine-tailed-fox", name: "Ahri, Nine-Tailed Fox", set: "Origins" },
+  { id: "akali-rogue-assassin", name: "Akali, Rogue Assassin", set: "Vendetta" },
+  { id: "ambessa-matriarch-of-war", name: "Ambessa, Matriarch of War", set: "Vendetta" },
   { id: "annie-dark-child", name: "Annie, Dark Child", set: "Origins" },
   { id: "azir-emperor-of-the-sands", name: "Azir, Emperor of the Sands", set: "Spiritforged" },
   { id: "darius-hand-of-noxus", name: "Darius, Hand of Noxus", set: "Origins" },
@@ -17,9 +19,11 @@ export const LEGENDS: Legend[] = [
   { id: "irelia-blade-dancer", name: "Irelia, Blade Dancer", set: "Spiritforged" },
   { id: "ivern-green-father", name: "Ivern, Green Father", set: "Spiritforged" },
   { id: "jax-grandmaster-at-arms", name: "Jax, Grandmaster at Arms", set: "Spiritforged" },
+  { id: "jayce-defender-of-tomorrow", name: "Jayce, Defender of Tomorrow", set: "Vendetta" },
   { id: "jhin-virtuoso", name: "Jhin, Virtuoso", set: "Spiritforged" },
   { id: "jinx-loose-cannon", name: "Jinx, Loose Cannon", set: "Origins" },
   { id: "kaisa-daughter-of-the-void", name: "Kai'Sa, Daughter of the Void", set: "Origins" },
+  { id: "kennen-heart-of-the-tempest", name: "Kennen, Heart of the Tempest", set: "Vendetta" },
   { id: "khazix-voidreaver", name: "Kha'Zix, Voidreaver", set: "Unleashed" },
   { id: "leblanc-deceiver", name: "LeBlanc, Deceiver", set: "Spiritforged" },
   { id: "lee-sin-blind-monk", name: "Lee Sin, Blind Monk", set: "Origins" },
@@ -29,22 +33,27 @@ export const LEGENDS: Legend[] = [
   { id: "lux-lady-of-luminosity", name: "Lux, Lady of Luminosity", set: "Origins" },
   { id: "master-yi-wuju-bladesman", name: "Master Yi, Wuju Bladesman", set: "Unleashed" },
   { id: "master-yi-wuju-master", name: "Master Yi, Wuju Master", set: "Origins" },
+  { id: "mel-souls-reflection", name: "Mel, Soul's Reflection", set: "Vendetta" },
   { id: "miss-fortune-bounty-hunter", name: "Miss Fortune, Bounty Hunter", set: "Origins" },
+  { id: "nasus-curator-of-the-sands", name: "Nasus, Curator of the Sands", set: "Vendetta" },
   { id: "ornn-fire-below-the-mountain", name: "Ornn, Fire Below the Mountain", set: "Spiritforged" },
   { id: "poppy-keeper-of-the-hammer", name: "Poppy, Keeper of the Hammer", set: "Spiritforged" },
   { id: "pyke-bloodharbor-ripper", name: "Pyke, Bloodharbor Ripper", set: "Unleashed" },
   { id: "reksai-void-burrower", name: "Rek'Sai, Void Burrower", set: "Unleashed" },
   { id: "renata-glasc-chem-baroness", name: "Renata Glasc, Chem-Baroness", set: "Unleashed" },
+  { id: "renekton-butcher-of-the-sands", name: "Renekton, Butcher of the Sands", set: "Vendetta" },
   { id: "rengar-pridestalker", name: "Rengar, Pridestalker", set: "Unleashed" },
   { id: "rumble-mechanized-menace", name: "Rumble, Mechanized Menace", set: "Spiritforged" },
   { id: "sett-the-boss", name: "Sett, The Boss", set: "Origins" },
+  { id: "shen-eye-of-twilight", name: "Shen, Eye of Twilight", set: "Vendetta" },
   { id: "sivir-battle-mistress", name: "Sivir, Battle Mistress", set: "Unleashed" },
   { id: "teemo-swift-scout", name: "Teemo, Swift Scout", set: "Origins" },
   { id: "vex-gloomist", name: "Vex, Gloomist", set: "Unleashed" },
   { id: "vi-piltover-enforcer", name: "Vi, Piltover Enforcer", set: "Unleashed" },
   { id: "viktor-herald-of-the-arcane", name: "Viktor, Herald of the Arcane", set: "Origins" },
   { id: "volibear-relentless-storm", name: "Volibear, Relentless Storm", set: "Origins" },
-  { id: "yasuo-unforgiven", name: "Yasuo, Unforgiven", set: "Origins" }
+  { id: "yasuo-unforgiven", name: "Yasuo, Unforgiven", set: "Origins" },
+  { id: "zed-master-of-shadows", name: "Zed, Master of Shadows", set: "Vendetta" }
 ];
 
 export function getLegendById(id: string): Legend | undefined {

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-10T16:17:38.294Z",
+  "generatedAt": "2026-07-17T21:50:58.682Z",
   "source": "https://api.riftcodex.com",
   "knownSets": [
     {
@@ -36,6 +36,11 @@
       "setId": "UNL",
       "name": "Unleashed",
       "publishedOn": "2026-05-08T00:00:00"
+    },
+    {
+      "setId": "VEN",
+      "name": "Vendetta",
+      "publishedOn": "2026-07-31T00:00:00"
     }
   ],
   "art": {
@@ -50,6 +55,30 @@
       "imageUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/fbce641f5e4d8cdf2956e8ead5884b6cd3ccd90d-744x1040.png",
       "artist": "Envar Studio",
       "updatedOn": "2026-03-19T20:25:57.109769+00:00"
+    },
+    "akali-rogue-assassin": {
+      "file": "akali-rogue-assassin.png",
+      "legendId": "akali-rogue-assassin",
+      "legendName": "Akali, Rogue Assassin",
+      "setId": "VEN",
+      "setName": "Vendetta",
+      "riftcodexCardId": "6a56ab99ff602fd324f4765a",
+      "riftboundId": "ven-139-166",
+      "imageUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/0d53b477ed43fb9bbed84858443a606b2b51a2b5-744x1039.png?accountingTag=RB",
+      "artist": "Envar Studio",
+      "updatedOn": "2026-07-14T21:35:21.770416+00:00"
+    },
+    "ambessa-matriarch-of-war": {
+      "file": "ambessa-matriarch-of-war.png",
+      "legendId": "ambessa-matriarch-of-war",
+      "legendName": "Ambessa, Matriarch of War",
+      "setId": "VEN",
+      "setName": "Vendetta",
+      "riftcodexCardId": "6a56ab97ff602fd324f47638",
+      "riftboundId": "ven-153-166",
+      "imageUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/49e81916d7ae72b24de845223e1798652d26e789-744x1039.png?accountingTag=RB",
+      "artist": "Envar Studio",
+      "updatedOn": "2026-07-16T17:03:35.911466+00:00"
     },
     "annie-dark-child": {
       "file": "annie-dark-child.png",
@@ -183,6 +212,18 @@
       "artist": "Pandart Studio",
       "updatedOn": "2026-03-19T20:26:04.110955+00:00"
     },
+    "jayce-defender-of-tomorrow": {
+      "file": "jayce-defender-of-tomorrow.png",
+      "legendId": "jayce-defender-of-tomorrow",
+      "legendName": "Jayce, Defender of Tomorrow",
+      "setId": "VEN",
+      "setName": "Vendetta",
+      "riftcodexCardId": "6a56ab95ff602fd324f47610",
+      "riftboundId": "ven-149-166",
+      "imageUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/670b7efd367a42beba11c18fb59e240a7c574a57-744x1039.png?accountingTag=RB",
+      "artist": "Envar Studio",
+      "updatedOn": "2026-07-17T20:38:03.339948+00:00"
+    },
     "jhin-virtuoso": {
       "file": "jhin-virtuoso.png",
       "legendId": "jhin-virtuoso",
@@ -218,6 +259,18 @@
       "imageUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/a576472c7bb00f475882ac814e1d8f9be233b402-744x1040.png?accountingTag=RB",
       "artist": "Kudos Productions",
       "updatedOn": "2026-03-19T20:25:56.689760+00:00"
+    },
+    "kennen-heart-of-the-tempest": {
+      "file": "kennen-heart-of-the-tempest.png",
+      "legendId": "kennen-heart-of-the-tempest",
+      "legendName": "Kennen, Heart of the Tempest",
+      "setId": "VEN",
+      "setName": "Vendetta",
+      "riftcodexCardId": "6a56ab96ff602fd324f4761e",
+      "riftboundId": "ven-155-166",
+      "imageUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/0eab83392b310417d2630d50a3bfee3dd02b31c4-744x1039.png?accountingTag=RB",
+      "artist": "Envar Studio",
+      "updatedOn": "2026-07-14T21:35:18.510413+00:00"
     },
     "khazix-voidreaver": {
       "file": "khazix-voidreaver.png",
@@ -327,6 +380,18 @@
       "artist": "Envar Studio",
       "updatedOn": "2026-03-19T20:26:22.431845+00:00"
     },
+    "mel-souls-reflection": {
+      "file": "mel-souls-reflection.png",
+      "legendId": "mel-souls-reflection",
+      "legendName": "Mel, Soul's Reflection",
+      "setId": "VEN",
+      "setName": "Vendetta",
+      "riftcodexCardId": "6a56ab9aff602fd324f4766c",
+      "riftboundId": "ven-151-166",
+      "imageUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/2e9e60b3f161b41219c40ef0426049634fb7ba1a-744x1039.png?accountingTag=RB",
+      "artist": "Envar Studio",
+      "updatedOn": "2026-07-16T17:03:38.054707+00:00"
+    },
     "miss-fortune-bounty-hunter": {
       "file": "miss-fortune-bounty-hunter.png",
       "legendId": "miss-fortune-bounty-hunter",
@@ -338,6 +403,18 @@
       "imageUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/cc11261fcdbf0851525030bd9e835b718efad3bc-744x1040.png?accountingTag=RB",
       "artist": "Six More Vodka",
       "updatedOn": "2026-03-19T20:25:57.729377+00:00"
+    },
+    "nasus-curator-of-the-sands": {
+      "file": "nasus-curator-of-the-sands.png",
+      "legendId": "nasus-curator-of-the-sands",
+      "legendName": "Nasus, Curator of the Sands",
+      "setId": "VEN",
+      "setName": "Vendetta",
+      "riftcodexCardId": "6a56ab95ff602fd324f4760b",
+      "riftboundId": "ven-145-166",
+      "imageUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/f26a25c5fddba7da788455c3d82b85c5abc7a2eb-744x1039.png?accountingTag=RB",
+      "artist": "Envar Studio",
+      "updatedOn": "2026-07-16T17:03:34.005527+00:00"
     },
     "ornn-fire-below-the-mountain": {
       "file": "ornn-fire-below-the-mountain.png",
@@ -399,6 +476,18 @@
       "artist": "Pandart Studio",
       "updatedOn": "2026-03-19T20:26:02.487027+00:00"
     },
+    "renekton-butcher-of-the-sands": {
+      "file": "renekton-butcher-of-the-sands.png",
+      "legendId": "renekton-butcher-of-the-sands",
+      "legendName": "Renekton, Butcher of the Sands",
+      "setId": "VEN",
+      "setName": "Vendetta",
+      "riftcodexCardId": "6a56ab95ff602fd324f47604",
+      "riftboundId": "ven-141-166",
+      "imageUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/7620595b36b40a0c3d05c4c5469b016d1c18c6f2-744x1039.png?accountingTag=RB",
+      "artist": "Envar Studio",
+      "updatedOn": "2026-07-14T21:35:17.033513+00:00"
+    },
     "rengar-pridestalker": {
       "file": "rengar-pridestalker.png",
       "legendId": "rengar-pridestalker",
@@ -434,6 +523,18 @@
       "imageUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/b132becb843b2cf418cb110ead64758f49f51554-744x1039.png",
       "artist": "Envar Studio",
       "updatedOn": "2026-03-19T20:25:57.832503+00:00"
+    },
+    "shen-eye-of-twilight": {
+      "file": "shen-eye-of-twilight.png",
+      "legendId": "shen-eye-of-twilight",
+      "legendName": "Shen, Eye of Twilight",
+      "setId": "VEN",
+      "setName": "Vendetta",
+      "riftcodexCardId": "6a56ab95ff602fd324f47615",
+      "riftboundId": "ven-147-166",
+      "imageUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/54388a3124b7e1f0331e5970f952778db5f24500-744x1039.png?accountingTag=RB",
+      "artist": "Envar Studio",
+      "updatedOn": "2026-07-16T17:03:34.453560+00:00"
     },
     "sivir-battle-mistress": {
       "file": "sivir-battle-mistress.png",
@@ -518,6 +619,18 @@
       "imageUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/68e4d3230b785738ae9d86f780f7f5607ef11807-744x1040.png",
       "artist": "TSWCK逍",
       "updatedOn": "2026-03-19T20:25:57.328030+00:00"
+    },
+    "zed-master-of-shadows": {
+      "file": "zed-master-of-shadows.png",
+      "legendId": "zed-master-of-shadows",
+      "legendName": "Zed, Master of Shadows",
+      "setId": "VEN",
+      "setName": "Vendetta",
+      "riftcodexCardId": "6a56ab97ff602fd324f47636",
+      "riftboundId": "ven-143-166",
+      "imageUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/aa316eb1b01c8d036eaba84b03909027fe69f6e2-744x1039.png?accountingTag=RB",
+      "artist": "Envar Studio",
+      "updatedOn": "2026-07-14T21:35:19.798031+00:00"
     }
   }
 }

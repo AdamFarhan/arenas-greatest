@@ -50,7 +50,7 @@ export default function MatchesScreen() {
   }
 
   return (
-    <MenuScreen title="Matches" subtitle="A broad look at your latest battles.">
+    <MenuScreen title="Matches" subtitle="A broad look at your latest games.">
       <ScrollView
         contentContainerStyle={styles.list}
         refreshControl={
