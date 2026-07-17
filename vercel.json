@@ -1,0 +1,12 @@
+{
+  "installCommand": "npm ci",
+  "buildCommand": "npm --workspace @riftbound/mobile run build:web",
+  "outputDirectory": "apps/mobile/dist",
+  "framework": null,
+  "rewrites": [
+    {
+      "source": "/((?!_expo/|.*\\..*).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
