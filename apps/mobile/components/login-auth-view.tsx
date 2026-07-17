@@ -5,7 +5,16 @@ import { colors } from "@/lib/theme";
 export function LoginAuthView() {
   return (
     <View style={styles.webAuth}>
-      <SignIn signUpUrl="/login" forceRedirectUrl="/play" />
+      <SignIn
+        signUpUrl="/login"
+        forceRedirectUrl="/play"
+        appearance={{
+          variables: {
+            fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+            fontFamilyButtons: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+          }
+        }}
+      />
     </View>
   );
 }
