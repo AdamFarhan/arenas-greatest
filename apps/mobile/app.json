@@ -21,7 +21,16 @@
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "name": "Arena's Greatest",
+      "shortName": "Arena's",
+      "favicon": "./assets/favicon.png",
+      "themeColor": "#050505",
+      "backgroundColor": "#050505",
+      "display": "standalone",
+      "orientation": "portrait",
+      "startUrl": "/",
+      "scope": "/",
+      "preferRelatedApplications": false
     },
     "plugins": ["expo-router", "expo-secure-store", "@clerk/expo"],
     "extra": {

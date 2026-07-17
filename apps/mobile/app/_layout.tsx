@@ -1,4 +1,5 @@
 import { Stack } from "expo-router";
+import Head from "expo-router/head";
 import { ClerkProvider } from "@clerk/expo";
 import { DarkTheme, ThemeProvider } from "@react-navigation/native";
 import { useCallback, useMemo, useState } from "react";
@@ -47,26 +48,40 @@ export default function RootLayout() {
   }
 
   return (
-    <ClerkRecoveryProvider value={recoveryContext}>
-      <ClerkProvider key={clerkProviderKey} publishableKey={clerkPublishableKey} tokenCache={clerkTokenCache}>
-        <ThemeProvider value={navigationTheme}>
-          <SessionProvider>
-            <SavedMatchesProvider>
-              <MatchProvider>
-                <Stack
-                  screenOptions={{
-                    animation: "none",
-                    contentStyle: {
-                      backgroundColor: colors.background
-                    },
-                    headerShown: false
-                  }}
-                />
-              </MatchProvider>
-            </SavedMatchesProvider>
-          </SessionProvider>
-        </ThemeProvider>
-      </ClerkProvider>
-    </ClerkRecoveryProvider>
+    <>
+      <Head>
+        <meta name="application-name" content="Arena's Greatest" />
+        <meta name="theme-color" content="#050505" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-title" content="Arena's" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+      </Head>
+      <ClerkRecoveryProvider value={recoveryContext}>
+        <ClerkProvider key={clerkProviderKey} publishableKey={clerkPublishableKey} tokenCache={clerkTokenCache}>
+          <ThemeProvider value={navigationTheme}>
+            <SessionProvider>
+              <SavedMatchesProvider>
+                <MatchProvider>
+                  <Stack
+                    screenOptions={{
+                      animation: "none",
+                      contentStyle: {
+                        backgroundColor: colors.background
+                      },
+                      headerShown: false
+                    }}
+                  />
+                </MatchProvider>
+              </SavedMatchesProvider>
+            </SessionProvider>
+          </ThemeProvider>
+        </ClerkProvider>
+      </ClerkRecoveryProvider>
+    </>
   );
 }

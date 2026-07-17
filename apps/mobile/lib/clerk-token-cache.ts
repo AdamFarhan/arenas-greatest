@@ -1,27 +1,24 @@
-import * as SecureStore from "expo-secure-store";
+import { deleteStoredItem, getStoredItem, setStoredItem } from "@/lib/persistent-storage";
 
 const CLERK_CLIENT_JWT_KEY = "__clerk_client_jwt";
-const secureStoreOptions = {
-  keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK
-};
 
 export const clerkTokenCache = {
   async getToken(key: string) {
     try {
-      return await SecureStore.getItemAsync(key, secureStoreOptions);
+      return await getStoredItem(key);
     } catch {
-      await SecureStore.deleteItemAsync(key, secureStoreOptions);
+      await deleteStoredItem(key).catch(() => {});
       return null;
     }
   },
   saveToken(key: string, token: string) {
-    return SecureStore.setItemAsync(key, token, secureStoreOptions);
+    return setStoredItem(key, token);
   },
   clearToken(key: string) {
-    void SecureStore.deleteItemAsync(key, secureStoreOptions);
+    void deleteStoredItem(key);
   }
 };
 
 export function clearClerkClientToken() {
-  return SecureStore.deleteItemAsync(CLERK_CLIENT_JWT_KEY, secureStoreOptions);
+  return deleteStoredItem(CLERK_CLIENT_JWT_KEY);
 }

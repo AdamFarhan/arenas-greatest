@@ -1,9 +1,9 @@
 import { useAuth } from "@clerk/expo";
-import { AuthView } from "@clerk/expo/native";
 import { Redirect } from "expo-router";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LoginAuthView } from "@/components/login-auth-view";
 import { Card } from "@/components/primitives";
 import { useClerkRecovery } from "@/lib/clerk-recovery";
 import { colors } from "@/lib/theme";
@@ -48,9 +48,7 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <View style={styles.authView}>
-        <AuthView mode="signInOrUp" />
-      </View>
+      <LoginAuthView />
     </SafeAreaView>
   );
 }
@@ -64,10 +62,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: 18
-  },
-  authView: {
-    flex: 1,
-    backgroundColor: colors.background
   },
   title: {
     color: colors.foreground,
