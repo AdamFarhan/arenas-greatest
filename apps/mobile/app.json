@@ -22,7 +22,7 @@
     },
     "web": {
       "name": "Arena's Greatest",
-      "shortName": "Arena's",
+      "shortName": "Arena's Greatest",
       "favicon": "./assets/favicon.png",
       "themeColor": "#050505",
       "backgroundColor": "#050505",

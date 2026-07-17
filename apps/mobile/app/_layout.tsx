@@ -6,7 +6,10 @@ import { useCallback, useMemo, useState } from "react";
 import { MatchProvider } from "@/lib/match-state";
 import { SavedMatchesProvider } from "@/lib/saved-matches";
 import { SessionProvider } from "@/lib/session";
-import { clearClerkClientToken, clerkTokenCache } from "@/lib/clerk-token-cache";
+import {
+  clearClerkClientToken,
+  clerkTokenCache,
+} from "@/lib/clerk-token-cache";
 import { ClerkRecoveryProvider } from "@/lib/clerk-recovery";
 import { colors } from "@/lib/theme";
 
@@ -19,8 +22,8 @@ const navigationTheme = {
     card: colors.background,
     notification: colors.primary,
     primary: colors.primary,
-    text: colors.foreground
-  }
+    text: colors.foreground,
+  },
 };
 
 export default function RootLayout() {
@@ -40,11 +43,13 @@ export default function RootLayout() {
 
   const recoveryContext = useMemo(
     () => ({ needsClerkRecovery, requestClerkRecovery, recoverClerkSession }),
-    [needsClerkRecovery, recoverClerkSession, requestClerkRecovery]
+    [needsClerkRecovery, recoverClerkSession, requestClerkRecovery],
   );
 
   if (!clerkPublishableKey) {
-    throw new Error("Add EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY to apps/mobile/.env.");
+    throw new Error(
+      "Add EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY to apps/mobile/.env.",
+    );
   }
 
   return (
@@ -54,15 +59,28 @@ export default function RootLayout() {
         <meta name="theme-color" content="#050505" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-title" content="Arena's" />
+        <meta name="apple-mobile-web-app-title" content="Arena's Greatest" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="32x32"
+          href="/favicon-32.png"
+        />
+        <link
+          rel="apple-touch-icon"
+          sizes="180x180"
+          href="/apple-touch-icon.png"
+        />
       </Head>
       <ClerkRecoveryProvider value={recoveryContext}>
-        <ClerkProvider key={clerkProviderKey} publishableKey={clerkPublishableKey} tokenCache={clerkTokenCache}>
+        <ClerkProvider
+          key={clerkProviderKey}
+          publishableKey={clerkPublishableKey}
+          tokenCache={clerkTokenCache}
+        >
           <ThemeProvider value={navigationTheme}>
             <SessionProvider>
               <SavedMatchesProvider>
@@ -71,9 +89,9 @@ export default function RootLayout() {
                     screenOptions={{
                       animation: "none",
                       contentStyle: {
-                        backgroundColor: colors.background
+                        backgroundColor: colors.background,
                       },
-                      headerShown: false
+                      headerShown: false,
                     }}
                   />
                 </MatchProvider>
