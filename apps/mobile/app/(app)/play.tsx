@@ -16,7 +16,10 @@ import {
   Vibration,
   View,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import {
   addScore,
   endGameEarly,
@@ -107,7 +110,9 @@ export default function ScorerScreen() {
   }
 
   function score(player: PlayerSide, reason: ScoreReason) {
-    setMatch((current) => addScore(current, player, reason, new Date().toISOString()));
+    setMatch((current) =>
+      addScore(current, player, reason, new Date().toISOString()),
+    );
   }
 
   function adjustScore(player: PlayerSide, nextScore: number) {
@@ -153,9 +158,7 @@ export default function ScorerScreen() {
 
     if (!hasSupabaseConfig()) {
       setSaveState("failed");
-      setSaveStatus(
-        "Cloud save is unavailable right now. Try again later.",
-      );
+      setSaveStatus("Cloud save is unavailable right now. Try again later.");
       return false;
     }
 
@@ -1010,7 +1013,7 @@ function MatchEntryModal({
           : "Save match";
   const title = isManual ? "End match" : "Match complete";
   const subtitle = isManual
-    ? "Save the current match with a manual result, or discard it."
+    ? "Save the current match manually, or discard it."
     : `${match.winner === "player" ? "You won" : "Opponent won"} ${match.wins.player}-${match.wins.opponent}`;
   const secondaryButtonLabel = isManual
     ? "Discard match"
@@ -1285,12 +1288,16 @@ function getResultLabel(result: MatchResult) {
   return "Tie";
 }
 
-function getConcessionWinningEntryId(game: MatchState["games"][number] | undefined) {
+function getConcessionWinningEntryId(
+  game: MatchState["games"][number] | undefined,
+) {
   if (!game || game.endReason !== "concession" || !game.winner) {
     return undefined;
   }
 
-  return [...game.events].reverse().find((event) => event.player === game.winner)?.id;
+  return [...game.events]
+    .reverse()
+    .find((event) => event.player === game.winner)?.id;
 }
 
 function useBottomSheetProgress(open: boolean) {

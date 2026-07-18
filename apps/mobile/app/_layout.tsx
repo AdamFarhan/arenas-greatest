@@ -12,6 +12,8 @@ import {
 } from "@/lib/clerk-token-cache";
 import { ClerkRecoveryProvider } from "@/lib/clerk-recovery";
 import { colors } from "@/lib/theme";
+import { PwaOnboarding } from "@/components/pwa-onboarding";
+import { PwaInstallProvider } from "@/components/pwa-install-context";
 
 const navigationTheme = {
   ...DarkTheme,
@@ -53,7 +55,7 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <PwaInstallProvider>
       <Head>
         <meta name="application-name" content="Arena's Greatest" />
         <meta name="theme-color" content="#050505" />
@@ -100,6 +102,7 @@ export default function RootLayout() {
           </ThemeProvider>
         </ClerkProvider>
       </ClerkRecoveryProvider>
-    </>
+      <PwaOnboarding />
+    </PwaInstallProvider>
   );
 }

@@ -1,12 +1,13 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { usePathname, useRouter } from "expo-router";
 import type { ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { usePwaInstall } from "@/components/pwa-install-context";
 import { colors, radius } from "@/lib/theme";
 
 type MenuItem = {
-  href: "/play" | "/matches" | "/profile";
+  href?: "/play" | "/matches" | "/profile";
   label: string;
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
 };
@@ -21,11 +22,16 @@ export function BottomMenu({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const pwaInstall = usePwaInstall();
+  const showInstall = pwaInstall.isMobile && !pwaInstall.isStandalone && !pwaInstall.isInstalled;
+  const menuItems = showInstall
+    ? [...MENU_ITEMS, { label: "Install", icon: "download" as const }]
+    : MENU_ITEMS;
 
   return (
-    <View style={[styles.menu, { bottom: Math.max(18, insets.bottom + 8) }]}>
-      {MENU_ITEMS.map((item) => {
-        const active = pathname === item.href || pathname.startsWith(`${item.href}/`) || (pathname === "/" && item.href === "/play");
+    <View style={[styles.menu, { bottom: Math.max(18, insets.bottom + 8) }]}> 
+      {menuItems.map((item) => {
+        const active = item.href ? pathname === item.href || pathname.startsWith(`${item.href}/`) || (pathname === "/" && item.href === "/play") : false;
 
         return (
           <Pressable
@@ -33,7 +39,18 @@ export function BottomMenu({ onNavigate }: { onNavigate?: () => void }) {
             style={[styles.item, active && styles.activeItem]}
             onPress={() => {
               onNavigate?.();
-              router.replace(item.href);
+              if (item.href) {
+                router.replace(item.href);
+                return;
+              }
+
+              if (pwaInstall.browser === "firefox") {
+                pwaInstall.openChrome();
+              } else if (pwaInstall.browser === "safari") {
+                Alert.alert("Install app", "Tap the Share button in Safari, then choose Add to Home Screen.");
+              } else {
+                void pwaInstall.install();
+              }
             }}
           >
             <MaterialCommunityIcons
