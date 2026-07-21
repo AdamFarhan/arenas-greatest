@@ -12,6 +12,7 @@ export default function Root({ children }: { children: ReactNode }) {
           content="width=device-width, initial-scale=1, shrink-to-fit=no"
         />
         <meta name="application-name" content="Arena's Greatest" />
+        <meta name="color-scheme" content="dark" />
         <meta name="theme-color" content="#050505" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -30,6 +31,7 @@ export default function Root({ children }: { children: ReactNode }) {
           sizes="180x180"
           href="/apple-touch-icon.png"
         />
+        <style>{":root { color-scheme: dark; }"}</style>
         <ScrollViewStyleReset />
       </head>
       <body>{children}</body>

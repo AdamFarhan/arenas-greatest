@@ -58,6 +58,7 @@ export default function RootLayout() {
     <PwaInstallProvider>
       <Head>
         <meta name="application-name" content="Arena's Greatest" />
+        <meta name="color-scheme" content="dark" />
         <meta name="theme-color" content="#050505" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />

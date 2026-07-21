@@ -4,6 +4,8 @@ const indexPath = "dist/index.html";
 const html = await readFile(indexPath, "utf8");
 
 const headMarkup = `
+  <meta name="color-scheme" content="dark" />
+  <style>:root { color-scheme: dark; }</style>
   <link rel="manifest" href="/manifest.json" />
   <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
