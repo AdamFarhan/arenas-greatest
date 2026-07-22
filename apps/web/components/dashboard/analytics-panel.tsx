@@ -14,13 +14,13 @@ export function AnalyticsPanel({
 }) {
   return (
     <Card className={className}>
-      <CardHeader className="p-5 pb-2">
+      <CardHeader className="p-4 pb-2">
         <CardTitle className="text-base">{title}</CardTitle>
         {description && (
           <p className="text-xs text-muted-foreground">{description}</p>
         )}
       </CardHeader>
-      <CardContent className="p-5 pt-2">{children}</CardContent>
+      <CardContent className="p-4 pt-2">{children}</CardContent>
     </Card>
   );
 }

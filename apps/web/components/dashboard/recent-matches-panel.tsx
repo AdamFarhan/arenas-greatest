@@ -1,10 +1,8 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { AnalyticsPanel } from "./analytics-panel";
 import type { AnalyticsMatch } from "@/lib/analytics";
 import { formatDuration } from "@/lib/analytics";
-import { LegendAvatar } from "@/components/legend-avatar";
+import { LegendMatchup } from "@/components/legend-matchup";
 
 export function RecentMatchesPanel({ matches }: { matches: AnalyticsMatch[] }) {
   return (
@@ -21,31 +19,43 @@ export function RecentMatchesPanel({ matches }: { matches: AnalyticsMatch[] }) {
               className="flex items-center justify-between gap-3 py-3 first:pt-1 last:pb-1 hover:text-primary"
             >
               <div className="flex min-w-0 items-center gap-3">
-                <div className="flex shrink-0 -space-x-2">
-                  <LegendAvatar legendId={match.playerLegendId} name={match.playerLegend} size="sm" />
-                  <LegendAvatar legendId={match.opponentLegendId} name={match.opponentLegend} size="sm" />
-                </div>
+                <LegendMatchup
+                  playerLegendId={match.playerLegendId}
+                  playerName={match.playerLegend}
+                  opponentLegendId={match.opponentLegendId}
+                  opponentName={match.opponentLegend}
+                  size="sm"
+                />
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">vs {match.opponentLegend}</p>
+                  <p className="truncate text-sm font-medium">
+                    vs {match.opponentLegend}
+                  </p>
                   <p className="text-xs text-muted-foreground">
-                    {new Date(match.played_at).toLocaleDateString()} · {formatDuration(match.duration_seconds)}
+                    {new Date(match.played_at).toLocaleDateString()} ·{" "}
+                    {new Date(match.played_at).toLocaleTimeString([], {
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}{" "}
+                    · {formatDuration(match.duration_seconds)}
                   </p>
                 </div>
               </div>
-              <Badge
-                className={
-                  match.winner === "player"
-                    ? "border-primary/30 bg-primary/10 text-primary"
-                    : "border-destructive/40 bg-destructive/10 text-destructive"
-                }
-              >
-                {match.winner === "player"
-                  ? "Win"
-                  : match.winner === "opponent"
-                    ? "Loss"
-                    : "Tie"}
-              </Badge>
-              <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <div className="flex shrink-0 items-center gap-3">
+                <div className="text-right">
+                  <p className="font-semibold leading-none">
+                    {match.player_game_wins}-{match.opponent_game_wins}
+                  </p>
+                  <p className="text-xs text-muted-foreground font-black uppercase">
+                    {match.winner === "player" ? (
+                      <span className="text-primary">Victory</span>
+                    ) : match.winner === "opponent" ? (
+                      <span className="text-red-400">Defeat</span>
+                    ) : (
+                      "Tie"
+                    )}
+                  </p>
+                </div>
+              </div>
             </Link>
           ))
         ) : (

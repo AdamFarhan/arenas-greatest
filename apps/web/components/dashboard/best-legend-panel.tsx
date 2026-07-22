@@ -4,7 +4,13 @@ import { LegendAvatar } from "@/components/legend-avatar";
 export function BestLegendPanel({
   data,
 }: {
-  data: { legendId: string; name: string; winRate: number; wins: number; losses: number } | null;
+  data: {
+    legendId: string;
+    name: string;
+    winRate: number;
+    wins: number;
+    losses: number;
+  } | null;
 }) {
   return (
     <AnalyticsPanel
@@ -12,11 +18,13 @@ export function BestLegendPanel({
       description="Your strongest recorded legend"
     >
       <div className="flex items-center justify-between gap-4">
-        {data ? (
-          <LegendAvatar legendId={data.legendId} name={data.name} size="lg" />
-        ) : (
-          <div className="h-14 w-14 shrink-0 rounded-full border border-primary/40 bg-primary/10" />
-        )}
+        <div className="grow flex justify-center">
+          {data ? (
+            <LegendAvatar legendId={data.legendId} name={data.name} size="lg" />
+          ) : (
+            <div className="h-14 w-14 shrink-0 rounded-full border border-primary/40 bg-primary/10" />
+          )}
+        </div>
         {data ? (
           <div className="min-w-0">
             <p className="truncate text-xl font-semibold">{data.name}</p>

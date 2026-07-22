@@ -9,7 +9,7 @@ export function CloseGamesPanel({
   return (
     <AnalyticsPanel
       title="Close Games"
-      description="Games decided by five points or fewer"
+      description="Games decided by three points or fewer"
     >
       <div className="flex items-end justify-between">
         <div>

@@ -188,7 +188,7 @@ export function calculateDashboardStats(
     );
   const closeGames = matches
     .flatMap((match) => match.games)
-    .filter((game) => Math.abs(game.player_score - game.opponent_score) <= 5);
+    .filter((game) => Math.abs(game.player_score - game.opponent_score) <= 3);
   let cumulativeDecided = 0;
   let cumulativeWins = 0;
   const trend = [

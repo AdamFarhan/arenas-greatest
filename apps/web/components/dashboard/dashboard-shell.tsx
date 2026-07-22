@@ -37,8 +37,31 @@ export function DashboardShell() {
     range: "30d",
     legendId: "all",
   });
+  const [filtersStorageReady, setFiltersStorageReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState("");
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem("riftbound-dashboard-filters");
+      if (stored) {
+        const parsed = JSON.parse(stored) as Partial<DashboardFilters>;
+        if (isDashboardRange(parsed.range) && typeof parsed.legendId === "string") {
+          setFilters({ range: parsed.range, legendId: parsed.legendId });
+        }
+      }
+    } catch {
+      // Ignore unavailable or malformed browser storage and use defaults.
+    } finally {
+      setFiltersStorageReady(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (filtersStorageReady) {
+      window.localStorage.setItem("riftbound-dashboard-filters", JSON.stringify(filters));
+    }
+  }, [filters, filtersStorageReady]);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -77,8 +100,9 @@ export function DashboardShell() {
       <DashboardSidebar />
       <main className="min-w-0 flex-1">
         <div className="mx-auto max-w-[1600px] space-y-6 p-4 sm:p-6 lg:p-5">
-          <DashboardHeader />
-          <DashboardFiltersBar filters={filters} onChange={setFilters} />
+          <DashboardHeader>
+            <DashboardFiltersBar filters={filters} onChange={setFilters} />
+          </DashboardHeader>
           {loading ? (
             <DashboardLoading />
           ) : status ? (
@@ -186,4 +210,8 @@ function DashboardMessage({ message }: { message: string }) {
 }
 function formatMinutes(seconds: number) {
   return `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, "0")}`;
+}
+
+function isDashboardRange(value: unknown): value is DashboardFilters["range"] {
+  return value === "7d" || value === "30d" || value === "90d" || value === "all";
 }

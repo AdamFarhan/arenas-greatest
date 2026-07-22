@@ -34,9 +34,10 @@ export function LegendAvatar({
         <Image
           src={source}
           alt=""
-          fill
+          width={source.width}
+          height={source.height}
           sizes={size === "lg" ? "80px" : size === "md" ? "44px" : "32px"}
-          className="!h-[154%] !w-[110%] !max-w-none object-cover"
+          className="absolute !h-[154%] !w-[110%] !max-w-none object-cover -left-[5%] -top-[8%]"
         />
       ) : (
         <span className="grid h-full w-full place-items-center text-xs font-semibold text-muted-foreground">

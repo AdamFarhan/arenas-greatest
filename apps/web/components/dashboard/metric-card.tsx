@@ -15,7 +15,7 @@ export function MetricCard({
 }) {
   return (
     <Card>
-      <CardContent className="flex items-start justify-between p-5">
+      <CardContent className="flex items-start justify-between p-4">
         <div>
           <p className="text-sm text-muted-foreground">{label}</p>
           <p
