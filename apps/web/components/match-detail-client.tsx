@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { getLegendById } from "@riftbound/legends";
 import { demoMatches, type WebGame, type WebMatch } from "@/lib/demo-data";
 import { getBrowserSupabase, hasSupabaseConfig } from "@/lib/supabase";
@@ -11,20 +12,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export function MatchDetailClient({ id }: { id: string }) {
+  const { getToken, isLoaded, isSignedIn } = useAuth();
   const [cloudMatch, setCloudMatch] = useState<WebMatch | undefined>();
   const [status, setStatus] = useState("");
   const match = cloudMatch ?? demoMatches.find((item) => item.id === id);
 
   useEffect(() => {
-    if (!hasSupabaseConfig()) return;
+    if (!isLoaded || !isSignedIn || !hasSupabaseConfig()) return;
 
-    const supabase = getBrowserSupabase();
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!data.session) {
-        setStatus("Sign in to load this cloud match.");
-        return;
-      }
-
+    const supabase = getBrowserSupabase(getToken);
+    (async () => {
       const { data: matchRow, error: matchError } = await supabase
         .from("matches")
         .select("*")
@@ -85,14 +82,14 @@ export function MatchDetailClient({ id }: { id: string }) {
         games
       });
       setStatus("");
-    });
-  }, [id]);
+    })();
+  }, [getToken, id, isLoaded, isSignedIn]);
 
   if (!match) {
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-6 px-4 py-6">
         <Button variant="outline" size="sm">
-          <Link href="/dashboard">Back</Link>
+          <Link href="/">Back</Link>
         </Button>
         <Card>
           <CardHeader>
@@ -114,7 +111,7 @@ export function MatchDetailClient({ id }: { id: string }) {
           <p className="text-sm text-muted-foreground">{new Date(match.played_at).toLocaleString()}</p>
         </div>
         <Button variant="outline" size="sm">
-          <Link href="/dashboard">Back</Link>
+          <Link href="/">Back</Link>
         </Button>
       </header>
       {status ? <p className="text-sm text-muted-foreground">{status}</p> : null}

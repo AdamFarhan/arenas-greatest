@@ -72,12 +72,18 @@ export type SavedMatchDetail = SavedMatchSummary & {
   }>;
 };
 
-export function createSupabaseClient(url: string, anonKey: string) {
+export function createSupabaseClient(url: string, anonKey: string, accessToken?: string | (() => Promise<string | null>) | null) {
   if (!url || !anonKey) {
     throw new Error("Supabase URL and anon key are required.");
   }
 
-  return createClient<Database>(url, anonKey);
+  const getAccessToken = typeof accessToken === "function"
+    ? accessToken
+    : accessToken
+      ? async () => accessToken
+      : undefined;
+
+  return createClient<Database>(url, anonKey, getAccessToken ? { accessToken: getAccessToken } : {});
 }
 
 export function buildCompletedMatchPayload(
