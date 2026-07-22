@@ -29,6 +29,7 @@ import { RecentMatchesPanel } from "./recent-matches-panel";
 import { BestLegendPanel } from "./best-legend-panel";
 import { CloseGamesPanel } from "./close-games-panel";
 import { PlayPatternPanel } from "./play-pattern-panel";
+import { AnalyticsPanel } from "./analytics-panel";
 
 export function DashboardShell() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
@@ -46,7 +47,10 @@ export function DashboardShell() {
       const stored = window.localStorage.getItem("riftbound-dashboard-filters");
       if (stored) {
         const parsed = JSON.parse(stored) as Partial<DashboardFilters>;
-        if (isDashboardRange(parsed.range) && typeof parsed.legendId === "string") {
+        if (
+          isDashboardRange(parsed.range) &&
+          typeof parsed.legendId === "string"
+        ) {
           setFilters({ range: parsed.range, legendId: parsed.legendId });
         }
       }
@@ -59,7 +63,10 @@ export function DashboardShell() {
 
   useEffect(() => {
     if (filtersStorageReady) {
-      window.localStorage.setItem("riftbound-dashboard-filters", JSON.stringify(filters));
+      window.localStorage.setItem(
+        "riftbound-dashboard-filters",
+        JSON.stringify(filters),
+      );
     }
   }, [filters, filtersStorageReady]);
 
@@ -153,8 +160,11 @@ export function DashboardShell() {
                 id="recent-matches"
                 className="grid scroll-mt-6 gap-4 md:grid-cols-2 xl:grid-cols-[0.8fr_0.9fr_1.15fr_1fr]"
               >
-                <PlayPatternPanel data={stats.playPattern} />
-                <ScoringPatternPanel data={stats.scoring} />
+                <div className="grid gap-4">
+                  <ScoringPatternPanel data={stats.scoring} />
+                  <PlayPatternPanel data={stats.playPattern} />
+                </div>
+                <AnalyticsPanel title="Calendar">Calendar here</AnalyticsPanel>
                 <RecentMatchesPanel matches={stats.recentMatches} />
                 <div className="grid gap-4">
                   <BestLegendPanel data={stats.bestLegend} />
@@ -213,5 +223,7 @@ function formatMinutes(seconds: number) {
 }
 
 function isDashboardRange(value: unknown): value is DashboardFilters["range"] {
-  return value === "7d" || value === "30d" || value === "90d" || value === "all";
+  return (
+    value === "7d" || value === "30d" || value === "90d" || value === "all"
+  );
 }

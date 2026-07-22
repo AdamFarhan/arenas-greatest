@@ -1,4 +1,3 @@
-import { TrendingUp } from "lucide-react";
 import { AnalyticsPanel } from "./analytics-panel";
 
 export function PlayPatternPanel({
@@ -21,10 +20,6 @@ export function PlayPatternPanel({
               value={data.lateRecovery}
               color="var(--chart-3)"
             />
-            <p className="flex items-center gap-2 border-t pt-4 text-xs text-muted-foreground">
-              <TrendingUp className="h-3.5 w-3.5 text-primary" />
-              Based on recorded score events
-            </p>
           </>
         ) : (
           <p className="text-sm text-muted-foreground">
