@@ -1,4 +1,36 @@
 import { CircleAlert } from "lucide-react";
 import { AnalyticsPanel } from "./analytics-panel";
 
-export function CloseGamesPanel({ data }: { data: { wins: number; losses: number; total: number } }) { return <AnalyticsPanel title="Close Games" description="Games decided by five points or fewer"><div className="flex items-end justify-between"><div><p className="text-3xl font-semibold text-primary">{data.total}</p><p className="text-xs text-muted-foreground">total close games</p></div><div className="text-right text-xs"><p className="text-primary">{data.wins} wins</p><p className="text-destructive">{data.losses} losses</p></div></div>{data.total ? <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted"><div className="h-full bg-primary" style={{ width: `${(data.wins / data.total) * 100}%` }} /></div> : <CircleAlert className="mt-4 h-5 w-5 text-muted-foreground" />}</AnalyticsPanel>; }
+export function CloseGamesPanel({
+  data,
+}: {
+  data: { wins: number; losses: number; total: number };
+}) {
+  return (
+    <AnalyticsPanel
+      title="Close Games"
+      description="Games decided by five points or fewer"
+    >
+      <div className="flex items-end justify-between">
+        <div>
+          <p className="text-3xl font-semibold text-primary">{data.total}</p>
+          <p className="text-xs text-muted-foreground">total close games</p>
+        </div>
+        <div className="text-right text-xs">
+          <p className="text-primary">{data.wins} wins</p>
+          <p className="text-destructive">{data.losses} losses</p>
+        </div>
+      </div>
+      {data.total ? (
+        <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full bg-primary"
+            style={{ width: `${(data.wins / data.total) * 100}%` }}
+          />
+        </div>
+      ) : (
+        <CircleAlert className="mt-4 h-5 w-5 text-muted-foreground" />
+      )}
+    </AnalyticsPanel>
+  );
+}
