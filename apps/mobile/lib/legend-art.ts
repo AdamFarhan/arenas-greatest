@@ -1,72 +1,57 @@
 import type { ImageSourcePropType } from "react-native";
-import manifest from "@/lib/legend-art-manifest.json";
-
-export type LegendArtMetadata = {
-  file: string;
-  legendId: string;
-  legendName: string;
-  setId: string;
-  setName: string;
-  riftcodexCardId: string;
-  riftboundId: string;
-  imageUrl: string;
-  artist: string | null;
-  updatedOn: string | null;
-};
+import { LEGEND_ART_METADATA } from "@riftbound/legend-art";
 
 export const LEGEND_ART: Record<string, ImageSourcePropType> = {
-  "ahri-nine-tailed-fox": require("../assets/legend-art/ahri-nine-tailed-fox.png"),
-  "akali-rogue-assassin": require("../assets/legend-art/akali-rogue-assassin.png"),
-  "ambessa-matriarch-of-war": require("../assets/legend-art/ambessa-matriarch-of-war.png"),
-  "annie-dark-child": require("../assets/legend-art/annie-dark-child.png"),
-  "azir-emperor-of-the-sands": require("../assets/legend-art/azir-emperor-of-the-sands.png"),
-  "darius-hand-of-noxus": require("../assets/legend-art/darius-hand-of-noxus.png"),
-  "diana-scorn-of-the-moon": require("../assets/legend-art/diana-scorn-of-the-moon.png"),
-  "draven-glorious-executioner": require("../assets/legend-art/draven-glorious-executioner.png"),
-  "ezreal-prodigal-explorer": require("../assets/legend-art/ezreal-prodigal-explorer.png"),
-  "fiora-grand-duelist": require("../assets/legend-art/fiora-grand-duelist.png"),
-  "garen-might-of-demacia": require("../assets/legend-art/garen-might-of-demacia.png"),
-  "irelia-blade-dancer": require("../assets/legend-art/irelia-blade-dancer.png"),
-  "ivern-green-father": require("../assets/legend-art/ivern-green-father.png"),
-  "jax-grandmaster-at-arms": require("../assets/legend-art/jax-grandmaster-at-arms.png"),
-  "jayce-defender-of-tomorrow": require("../assets/legend-art/jayce-defender-of-tomorrow.png"),
-  "jhin-virtuoso": require("../assets/legend-art/jhin-virtuoso.png"),
-  "jinx-loose-cannon": require("../assets/legend-art/jinx-loose-cannon.png"),
-  "kaisa-daughter-of-the-void": require("../assets/legend-art/kaisa-daughter-of-the-void.png"),
-  "kennen-heart-of-the-tempest": require("../assets/legend-art/kennen-heart-of-the-tempest.png"),
-  "khazix-voidreaver": require("../assets/legend-art/khazix-voidreaver.png"),
-  "leblanc-deceiver": require("../assets/legend-art/leblanc-deceiver.png"),
-  "lee-sin-blind-monk": require("../assets/legend-art/lee-sin-blind-monk.png"),
-  "leona-radiant-dawn": require("../assets/legend-art/leona-radiant-dawn.png"),
-  "lillia-bashful-bloom": require("../assets/legend-art/lillia-bashful-bloom.png"),
-  "lucian-purifier": require("../assets/legend-art/lucian-purifier.png"),
-  "lux-lady-of-luminosity": require("../assets/legend-art/lux-lady-of-luminosity.png"),
-  "master-yi-wuju-bladesman": require("../assets/legend-art/master-yi-wuju-bladesman.png"),
-  "master-yi-wuju-master": require("../assets/legend-art/master-yi-wuju-master.png"),
-  "mel-souls-reflection": require("../assets/legend-art/mel-souls-reflection.png"),
-  "miss-fortune-bounty-hunter": require("../assets/legend-art/miss-fortune-bounty-hunter.png"),
-  "nasus-curator-of-the-sands": require("../assets/legend-art/nasus-curator-of-the-sands.png"),
-  "ornn-fire-below-the-mountain": require("../assets/legend-art/ornn-fire-below-the-mountain.png"),
-  "poppy-keeper-of-the-hammer": require("../assets/legend-art/poppy-keeper-of-the-hammer.png"),
-  "pyke-bloodharbor-ripper": require("../assets/legend-art/pyke-bloodharbor-ripper.png"),
-  "reksai-void-burrower": require("../assets/legend-art/reksai-void-burrower.png"),
-  "renata-glasc-chem-baroness": require("../assets/legend-art/renata-glasc-chem-baroness.png"),
-  "renekton-butcher-of-the-sands": require("../assets/legend-art/renekton-butcher-of-the-sands.png"),
-  "rengar-pridestalker": require("../assets/legend-art/rengar-pridestalker.png"),
-  "rumble-mechanized-menace": require("../assets/legend-art/rumble-mechanized-menace.png"),
-  "sett-the-boss": require("../assets/legend-art/sett-the-boss.png"),
-  "shen-eye-of-twilight": require("../assets/legend-art/shen-eye-of-twilight.png"),
-  "sivir-battle-mistress": require("../assets/legend-art/sivir-battle-mistress.png"),
-  "teemo-swift-scout": require("../assets/legend-art/teemo-swift-scout.png"),
-  "vex-gloomist": require("../assets/legend-art/vex-gloomist.png"),
-  "vi-piltover-enforcer": require("../assets/legend-art/vi-piltover-enforcer.png"),
-  "viktor-herald-of-the-arcane": require("../assets/legend-art/viktor-herald-of-the-arcane.png"),
-  "volibear-relentless-storm": require("../assets/legend-art/volibear-relentless-storm.png"),
-  "yasuo-unforgiven": require("../assets/legend-art/yasuo-unforgiven.png"),
-  "zed-master-of-shadows": require("../assets/legend-art/zed-master-of-shadows.png")
+  "ahri-nine-tailed-fox": require("@riftbound/legend-art/assets/ahri-nine-tailed-fox.png"),
+  "akali-rogue-assassin": require("@riftbound/legend-art/assets/akali-rogue-assassin.png"),
+  "ambessa-matriarch-of-war": require("@riftbound/legend-art/assets/ambessa-matriarch-of-war.png"),
+  "annie-dark-child": require("@riftbound/legend-art/assets/annie-dark-child.png"),
+  "azir-emperor-of-the-sands": require("@riftbound/legend-art/assets/azir-emperor-of-the-sands.png"),
+  "darius-hand-of-noxus": require("@riftbound/legend-art/assets/darius-hand-of-noxus.png"),
+  "diana-scorn-of-the-moon": require("@riftbound/legend-art/assets/diana-scorn-of-the-moon.png"),
+  "draven-glorious-executioner": require("@riftbound/legend-art/assets/draven-glorious-executioner.png"),
+  "ezreal-prodigal-explorer": require("@riftbound/legend-art/assets/ezreal-prodigal-explorer.png"),
+  "fiora-grand-duelist": require("@riftbound/legend-art/assets/fiora-grand-duelist.png"),
+  "garen-might-of-demacia": require("@riftbound/legend-art/assets/garen-might-of-demacia.png"),
+  "irelia-blade-dancer": require("@riftbound/legend-art/assets/irelia-blade-dancer.png"),
+  "ivern-green-father": require("@riftbound/legend-art/assets/ivern-green-father.png"),
+  "jax-grandmaster-at-arms": require("@riftbound/legend-art/assets/jax-grandmaster-at-arms.png"),
+  "jayce-defender-of-tomorrow": require("@riftbound/legend-art/assets/jayce-defender-of-tomorrow.png"),
+  "jhin-virtuoso": require("@riftbound/legend-art/assets/jhin-virtuoso.png"),
+  "jinx-loose-cannon": require("@riftbound/legend-art/assets/jinx-loose-cannon.png"),
+  "kaisa-daughter-of-the-void": require("@riftbound/legend-art/assets/kaisa-daughter-of-the-void.png"),
+  "kennen-heart-of-the-tempest": require("@riftbound/legend-art/assets/kennen-heart-of-the-tempest.png"),
+  "khazix-voidreaver": require("@riftbound/legend-art/assets/khazix-voidreaver.png"),
+  "leblanc-deceiver": require("@riftbound/legend-art/assets/leblanc-deceiver.png"),
+  "lee-sin-blind-monk": require("@riftbound/legend-art/assets/lee-sin-blind-monk.png"),
+  "leona-radiant-dawn": require("@riftbound/legend-art/assets/leona-radiant-dawn.png"),
+  "lillia-bashful-bloom": require("@riftbound/legend-art/assets/lillia-bashful-bloom.png"),
+  "lucian-purifier": require("@riftbound/legend-art/assets/lucian-purifier.png"),
+  "lux-lady-of-luminosity": require("@riftbound/legend-art/assets/lux-lady-of-luminosity.png"),
+  "master-yi-wuju-bladesman": require("@riftbound/legend-art/assets/master-yi-wuju-bladesman.png"),
+  "master-yi-wuju-master": require("@riftbound/legend-art/assets/master-yi-wuju-master.png"),
+  "mel-souls-reflection": require("@riftbound/legend-art/assets/mel-souls-reflection.png"),
+  "miss-fortune-bounty-hunter": require("@riftbound/legend-art/assets/miss-fortune-bounty-hunter.png"),
+  "nasus-curator-of-the-sands": require("@riftbound/legend-art/assets/nasus-curator-of-the-sands.png"),
+  "ornn-fire-below-the-mountain": require("@riftbound/legend-art/assets/ornn-fire-below-the-mountain.png"),
+  "poppy-keeper-of-the-hammer": require("@riftbound/legend-art/assets/poppy-keeper-of-the-hammer.png"),
+  "pyke-bloodharbor-ripper": require("@riftbound/legend-art/assets/pyke-bloodharbor-ripper.png"),
+  "reksai-void-burrower": require("@riftbound/legend-art/assets/reksai-void-burrower.png"),
+  "renata-glasc-chem-baroness": require("@riftbound/legend-art/assets/renata-glasc-chem-baroness.png"),
+  "renekton-butcher-of-the-sands": require("@riftbound/legend-art/assets/renekton-butcher-of-the-sands.png"),
+  "rengar-pridestalker": require("@riftbound/legend-art/assets/rengar-pridestalker.png"),
+  "rumble-mechanized-menace": require("@riftbound/legend-art/assets/rumble-mechanized-menace.png"),
+  "sett-the-boss": require("@riftbound/legend-art/assets/sett-the-boss.png"),
+  "shen-eye-of-twilight": require("@riftbound/legend-art/assets/shen-eye-of-twilight.png"),
+  "sivir-battle-mistress": require("@riftbound/legend-art/assets/sivir-battle-mistress.png"),
+  "teemo-swift-scout": require("@riftbound/legend-art/assets/teemo-swift-scout.png"),
+  "vex-gloomist": require("@riftbound/legend-art/assets/vex-gloomist.png"),
+  "vi-piltover-enforcer": require("@riftbound/legend-art/assets/vi-piltover-enforcer.png"),
+  "viktor-herald-of-the-arcane": require("@riftbound/legend-art/assets/viktor-herald-of-the-arcane.png"),
+  "volibear-relentless-storm": require("@riftbound/legend-art/assets/volibear-relentless-storm.png"),
+  "yasuo-unforgiven": require("@riftbound/legend-art/assets/yasuo-unforgiven.png"),
+  "zed-master-of-shadows": require("@riftbound/legend-art/assets/zed-master-of-shadows.png")
 };
-
-export const LEGEND_ART_METADATA = manifest.art as Record<string, LegendArtMetadata>;
 
 export function getLegendArtSource(legendId: string) {
   return LEGEND_ART[legendId];

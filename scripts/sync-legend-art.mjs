@@ -7,9 +7,10 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
 const legendsPath = path.join(rootDir, "packages/legends/src/index.ts");
-const artDir = path.join(rootDir, "apps/mobile/assets/legend-art");
-const manifestPath = path.join(rootDir, "apps/mobile/lib/legend-art-manifest.json");
+const artDir = path.join(rootDir, "packages/legend-art/assets");
+const manifestPath = path.join(rootDir, "packages/legend-art/manifest.json");
 const assetMapPath = path.join(rootDir, "apps/mobile/lib/legend-art.ts");
+const webAssetMapPath = path.join(rootDir, "apps/web/lib/legend-art.ts");
 const seedPath = path.join(rootDir, "supabase/seed/legends.sql");
 
 const API_BASE_URL = "https://api.riftcodex.com";
@@ -135,6 +136,7 @@ async function main() {
     await mkdir(artDir, { recursive: true });
     await writeFile(manifestPath, `${JSON.stringify(nextManifest, null, 2)}\n`);
     await writeFile(assetMapPath, renderAssetMap(nextManifest.art));
+    await writeFile(webAssetMapPath, renderWebAssetMap(nextManifest.art));
     await writeFile(legendsPath, renderLegends(nextLegends));
     await writeFile(seedPath, renderSeed(nextLegends));
   }
@@ -308,35 +310,51 @@ async function downloadFile(url, destination) {
 function renderAssetMap(art) {
   const entries = Object.entries(art)
     .filter(([, meta]) => meta.file)
-    .map(([legendId, meta]) => `  "${legendId}": require("../assets/legend-art/${meta.file}")`)
+    .map(([legendId, meta]) => `  "${legendId}": require("@riftbound/legend-art/assets/${meta.file}")`)
     .join(",\n");
 
   return `import type { ImageSourcePropType } from "react-native";
-import manifest from "@/lib/legend-art-manifest.json";
-
-export type LegendArtMetadata = {
-  file: string;
-  legendId: string;
-  legendName: string;
-  setId: string;
-  setName: string;
-  riftcodexCardId: string;
-  riftboundId: string;
-  imageUrl: string;
-  artist: string | null;
-  updatedOn: string | null;
-};
+import { LEGEND_ART_METADATA } from "@riftbound/legend-art";
 
 export const LEGEND_ART: Record<string, ImageSourcePropType> = {
 ${entries}
 };
 
-export const LEGEND_ART_METADATA = manifest.art as Record<string, LegendArtMetadata>;
+export function getLegendArtSource(legendId: string) {
+  return LEGEND_ART[legendId];
+}
+`;
+}
+
+function renderWebAssetMap(art) {
+  const imports = Object.entries(art)
+    .filter(([, meta]) => meta.file)
+    .map(([legendId, meta]) => `import ${toImportName(legendId)} from "@riftbound/legend-art/assets/${meta.file}";`)
+    .join("\n");
+  const entries = Object.entries(art)
+    .filter(([, meta]) => meta.file)
+    .map(([legendId]) => `  "${legendId}": ${toImportName(legendId)}`)
+    .join(",\n");
+
+  return `import type { StaticImageData } from "next/image";
+import { LEGEND_ART_METADATA, getLegendArtMetadata } from "@riftbound/legend-art";
+
+${imports}
+
+export { LEGEND_ART_METADATA, getLegendArtMetadata };
+
+export const LEGEND_ART: Record<string, StaticImageData> = {
+${entries}
+};
 
 export function getLegendArtSource(legendId: string) {
   return LEGEND_ART[legendId];
 }
 `;
+}
+
+function toImportName(legendId) {
+  return `${legendId.replace(/[^a-zA-Z0-9]+/g, "_")}_art`;
 }
 
 function renderLegends(legends) {

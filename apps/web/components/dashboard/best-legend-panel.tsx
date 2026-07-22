@@ -1,10 +1,10 @@
-import { Trophy } from "lucide-react";
 import { AnalyticsPanel } from "./analytics-panel";
+import { LegendAvatar } from "@/components/legend-avatar";
 
 export function BestLegendPanel({
   data,
 }: {
-  data: { name: string; winRate: number; wins: number; losses: number } | null;
+  data: { legendId: string; name: string; winRate: number; wins: number; losses: number } | null;
 }) {
   return (
     <AnalyticsPanel
@@ -12,9 +12,11 @@ export function BestLegendPanel({
       description="Your strongest recorded legend"
     >
       <div className="flex items-center justify-between gap-4">
-        <div className="grid h-14 w-14 shrink-0 place-items-center rounded-full border border-primary/40 bg-primary/10 text-primary">
-          <Trophy className="h-6 w-6" />
-        </div>
+        {data ? (
+          <LegendAvatar legendId={data.legendId} name={data.name} size="lg" />
+        ) : (
+          <div className="h-14 w-14 shrink-0 rounded-full border border-primary/40 bg-primary/10" />
+        )}
         {data ? (
           <div className="min-w-0">
             <p className="truncate text-xl font-semibold">{data.name}</p>

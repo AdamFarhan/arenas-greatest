@@ -23,7 +23,9 @@ export type WebMatch = {
   player_game_wins: number;
   opponent_game_wins: number;
   player_legend: string;
+  player_legend_id: string;
   opponent_legend: string;
+  opponent_legend_id: string;
   notes: string;
   games: WebGame[];
 };
@@ -36,7 +38,9 @@ export const demoMatches: WebMatch[] = [
     player_game_wins: 2,
     opponent_game_wins: 1,
     player_legend: "Ahri",
+    player_legend_id: "ahri-nine-tailed-fox",
     opponent_legend: "Darius",
+    opponent_legend_id: "darius-hand-of-noxus",
     notes: "Game 2 slipped after an early ability point. Holding triggers carried game 3.",
     games: [
       {

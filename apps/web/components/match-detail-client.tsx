@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { LegendAvatar } from "@/components/legend-avatar";
 
 export function MatchDetailClient({ id }: { id: string }) {
   const { getToken, isLoaded, isSignedIn } = useAuth();
@@ -77,7 +78,9 @@ export function MatchDetailClient({ id }: { id: string }) {
         player_game_wins: matchRow.player_game_wins,
         opponent_game_wins: matchRow.opponent_game_wins,
         player_legend: getLegendById(matchRow.player_legend_id)?.name ?? matchRow.player_legend_id,
+        player_legend_id: matchRow.player_legend_id,
         opponent_legend: getLegendById(matchRow.opponent_legend_id)?.name ?? matchRow.opponent_legend_id,
+        opponent_legend_id: matchRow.opponent_legend_id,
         notes: matchRow.notes ?? "",
         games
       });
@@ -104,11 +107,18 @@ export function MatchDetailClient({ id }: { id: string }) {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-6 px-4 py-6">
       <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-normal">
-            {match.player_legend} vs {match.opponent_legend}
-          </h1>
-          <p className="text-sm text-muted-foreground">{new Date(match.played_at).toLocaleString()}</p>
+        <div className="flex min-w-0 items-center gap-4">
+          <div className="flex shrink-0 items-center -space-x-3">
+            <LegendAvatar legendId={match.player_legend_id} name={match.player_legend} size="lg" />
+            <span className="z-10 grid h-8 w-8 place-items-center rounded-full border-2 border-background bg-card text-[10px] font-bold text-muted-foreground">VS</span>
+            <LegendAvatar legendId={match.opponent_legend_id} name={match.opponent_legend} size="lg" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="truncate text-2xl font-semibold tracking-normal">
+              {match.player_legend} vs {match.opponent_legend}
+            </h1>
+            <p className="text-sm text-muted-foreground">{new Date(match.played_at).toLocaleString()}</p>
+          </div>
         </div>
         <Button variant="outline" size="sm">
           <Link href="/">Back</Link>

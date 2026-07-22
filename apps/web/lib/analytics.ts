@@ -56,6 +56,7 @@ export type DashboardStats = {
   scoring: Array<{ name: string; value: number; color: string }>;
   recentMatches: AnalyticsMatch[];
   bestLegend: {
+    legendId: string;
     name: string;
     winRate: number;
     wins: number;
@@ -210,9 +211,13 @@ export function calculateDashboardStats(
     };
   });
 
-  const legendStats = new Map<string, { wins: number; losses: number }>();
+  const legendStats = new Map<string, { legendId: string; wins: number; losses: number }>();
   matches.forEach((match) => {
-    const stats = legendStats.get(match.playerLegend) ?? { wins: 0, losses: 0 };
+    const stats = legendStats.get(match.playerLegend) ?? {
+      legendId: match.playerLegendId,
+      wins: 0,
+      losses: 0,
+    };
     match.winner === "player"
       ? stats.wins++
       : match.winner === "opponent"

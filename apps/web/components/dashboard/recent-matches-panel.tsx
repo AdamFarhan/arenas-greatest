@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { AnalyticsPanel } from "./analytics-panel";
 import type { AnalyticsMatch } from "@/lib/analytics";
 import { formatDuration } from "@/lib/analytics";
+import { LegendAvatar } from "@/components/legend-avatar";
 
 export function RecentMatchesPanel({ matches }: { matches: AnalyticsMatch[] }) {
   return (
@@ -19,14 +20,17 @@ export function RecentMatchesPanel({ matches }: { matches: AnalyticsMatch[] }) {
               href={`/matches/${match.id}`}
               className="flex items-center justify-between gap-3 py-3 first:pt-1 last:pb-1 hover:text-primary"
             >
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium">
-                  vs {match.opponentLegend}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {new Date(match.played_at).toLocaleDateString()} ·{" "}
-                  {formatDuration(match.duration_seconds)}
-                </p>
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex shrink-0 -space-x-2">
+                  <LegendAvatar legendId={match.playerLegendId} name={match.playerLegend} size="sm" />
+                  <LegendAvatar legendId={match.opponentLegendId} name={match.opponentLegend} size="sm" />
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">vs {match.opponentLegend}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(match.played_at).toLocaleDateString()} · {formatDuration(match.duration_seconds)}
+                  </p>
+                </div>
               </div>
               <Badge
                 className={
