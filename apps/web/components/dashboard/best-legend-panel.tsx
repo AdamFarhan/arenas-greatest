@@ -15,10 +15,10 @@ export function BestLegendPanel({
   return (
     <AnalyticsPanel
       title="Best Legend"
-      description="Your strongest recorded legend"
+      description="Your best performing legend"
     >
-      <div className="flex items-center justify-between gap-4">
-        <div className="grow flex justify-center">
+      <div className="flex items-center justify-start gap-4">
+        <div className="">
           {data ? (
             <LegendAvatar legendId={data.legendId} name={data.name} size="lg" />
           ) : (
