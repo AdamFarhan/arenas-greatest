@@ -64,6 +64,7 @@ export type DashboardStats = {
   } | null;
   closeGames: { wins: number; losses: number; total: number };
   playPattern: { earlyLead: number; lateRecovery: number } | null;
+  activity: Array<{ date: string; count: number }>;
 };
 
 const chartColors = [
@@ -273,7 +274,27 @@ export function calculateDashboardStats(
       total: closeGames.length,
     },
     playPattern: buildPlayPattern(matches),
+    activity: calculateActivity(matches),
   };
+}
+
+export function calculateActivity(matches: AnalyticsMatch[], days = 365) {
+  const counts = countBy(matches, (match) => localDateKey(match.played_at));
+  const end = startOfDay(new Date());
+  const start = addDays(end, -(days - 1));
+  const gridStart = startOfWeek(start);
+  const gridEnd = endOfWeek(end);
+  const activity: Array<{ date: string; count: number }> = [];
+
+  for (
+    let date = gridStart;
+    date <= gridEnd;
+    date = addDays(date, 1)
+  ) {
+    const key = localDateKey(date.toISOString());
+    activity.push({ date: key, count: counts.get(key) ?? 0 });
+  }
+  return activity;
 }
 
 function buildPlayPattern(matches: AnalyticsMatch[]) {
@@ -323,6 +344,20 @@ function colorAt(index: number) {
 function localDateKey(value: string) {
   const date = new Date(value);
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12);
+}
+function startOfWeek(date: Date) {
+  return addDays(startOfDay(date), -startOfDay(date).getDay());
+}
+function endOfWeek(date: Date) {
+  return addDays(startOfWeek(date), 6);
+}
+function addDays(date: Date, amount: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + amount);
+  return next;
 }
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString(undefined, {

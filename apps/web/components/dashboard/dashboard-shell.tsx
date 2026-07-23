@@ -12,6 +12,7 @@ import {
 import { getBrowserSupabase, hasSupabaseConfig } from "@/lib/supabase";
 import {
   calculateDashboardStats,
+  calculateActivity,
   filterAnalyticsMatches,
   loadAnalyticsMatches,
   type AnalyticsMatch,
@@ -29,7 +30,7 @@ import { RecentMatchesPanel } from "./recent-matches-panel";
 import { BestLegendPanel } from "./best-legend-panel";
 import { CloseGamesPanel } from "./close-games-panel";
 import { PlayPatternPanel } from "./play-pattern-panel";
-import { AnalyticsPanel } from "./analytics-panel";
+import { ActivityCalendar } from "./activity-calendar";
 
 export function DashboardShell() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
@@ -100,6 +101,7 @@ export function DashboardShell() {
     () => calculateDashboardStats(filteredMatches),
     [filteredMatches],
   );
+  const activity = useMemo(() => calculateActivity(matches), [matches]);
   const hasData = matches.length > 0;
 
   return (
@@ -156,6 +158,7 @@ export function DashboardShell() {
                   total={stats.matches}
                 />
               </section>
+
               <section
                 id="recent-matches"
                 className="grid scroll-mt-6 gap-4 md:grid-cols-2 xl:grid-cols-[0.8fr_0.9fr_1.15fr_1fr]"
@@ -164,7 +167,7 @@ export function DashboardShell() {
                   <ScoringPatternPanel data={stats.scoring} />
                   <PlayPatternPanel data={stats.playPattern} />
                 </div>
-                <AnalyticsPanel title="Calendar">Calendar here</AnalyticsPanel>
+                <ActivityCalendar data={activity} compact />
                 <RecentMatchesPanel matches={stats.recentMatches} />
                 <div className="grid gap-4">
                   <BestLegendPanel data={stats.bestLegend} />

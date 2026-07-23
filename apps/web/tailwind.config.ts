@@ -15,6 +15,13 @@ const config: Config = {
           DEFAULT: "var(--primary)",
           foreground: "var(--primary-foreground)"
         },
+        activity: {
+          0: "var(--activity-0)",
+          1: "var(--activity-1)",
+          2: "var(--activity-2)",
+          3: "var(--activity-3)",
+          4: "var(--activity-4)"
+        },
         secondary: {
           DEFAULT: "var(--secondary)",
           foreground: "var(--secondary-foreground)"

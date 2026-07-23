@@ -12,6 +12,7 @@
   "dependencies": {
     "@clerk/nextjs": "^6.39.6",
     "@radix-ui/react-select": "^2.3.4",
+    "@radix-ui/react-tooltip": "^1.2.14",
     "@riftbound/core": "0.1.0",
     "@riftbound/db": "0.1.0",
     "@riftbound/legend-art": "0.1.0",
