@@ -5,11 +5,19 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const metadata: Metadata = {
-  title: "The Arena's Greatest",
-  description: "Track Riftbound matches, notes, legends, and scoring history."
+  title: "Arena's Greatest",
+  description: "Track Riftbound matches, notes, legends, and scoring history.",
+  icons: {
+    icon: "/icon.png",
+    apple: "/icon.png",
+  },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
