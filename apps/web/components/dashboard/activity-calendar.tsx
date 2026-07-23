@@ -195,6 +195,21 @@ function CompactActivityCalendar({
             )}
           </div>
         </div>
+        <div className="flex justify-center overflow-x-auto">
+          <div
+            className="grid grid-flow-col gap-1 text-[10px] text-muted-foreground"
+            style={{
+              width: gridWidth,
+              gridAutoColumns: `${cellSize}px`,
+            }}
+          >
+            {weeks.map((week, index) => (
+              <span key={index} className="h-3 whitespace-nowrap">
+                {monthLabel(week, index)}
+              </span>
+            ))}
+          </div>
+        </div>
         <div className="flex items-center justify-end gap-2 text-[10px] text-muted-foreground">
           <span>Less</span>
           <span className="h-3.5 w-3.5 rounded-[3px] border border-primary/30 bg-transparent" />
