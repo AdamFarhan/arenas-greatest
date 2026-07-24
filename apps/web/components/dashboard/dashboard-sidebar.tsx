@@ -51,7 +51,7 @@ function NavItem({
       href={href}
       className={cn(
         "flex items-center justify-center gap-2 rounded-md px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-accent-foreground lg:justify-start lg:text-sm",
-        active && "font-medium text-accent-foreground",
+        active && "font-medium !text-primary",
       )}
     >
       {icon}
