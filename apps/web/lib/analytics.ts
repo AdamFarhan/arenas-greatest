@@ -20,6 +20,7 @@ export type AnalyticsGame = Pick<
   | "id"
   | "game_number"
   | "winner"
+  | "end_reason"
   | "player_score"
   | "opponent_score"
   | "duration_seconds"
