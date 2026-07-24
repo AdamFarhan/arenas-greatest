@@ -20,6 +20,7 @@
     "@riftbound/legend-art": "0.1.0",
     "@riftbound/legends": "0.1.0",
     "@supabase/supabase-js": "^2.48.1",
+    "@tanstack/react-query": "^5.101.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",

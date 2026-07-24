@@ -19,6 +19,8 @@ export type AnalyticsGame = Pick<
   GameRow,
   | "id"
   | "game_number"
+  | "starting_player"
+  | "winning_point"
   | "winner"
   | "end_reason"
   | "player_score"
@@ -94,18 +96,29 @@ export async function loadAnalyticsMatches(
     .order("game_number");
   if (gameError) return { data: [], error: new Error(gameError.message) };
 
-  const gameIds = (games ?? []).map((game) => game.id);
-  const { data: events, error: eventError } = gameIds.length
-    ? await supabase
+  const gamesByMatch = groupBy(games ?? [], (game) => game.match_id);
+  const eventsByGame = new Map<string, EventRow[]>();
+
+  // Keep the per-game lookup used by the detail view before the shared query
+  // was introduced. It also keeps each score-event request scoped to one game.
+  const eventResults = await Promise.all(
+    (games ?? []).map(async (game) => {
+      const { data, error } = await supabase
         .from("score_events")
         .select("*")
-        .in("game_id", gameIds)
-        .order("created_at")
-    : { data: [], error: null };
+        .eq("game_id", game.id)
+        .order("created_at");
+
+      return { gameId: game.id, data: data ?? [], error };
+    }),
+  );
+
+  const eventError = eventResults.find((result) => result.error)?.error;
   if (eventError) return { data: [], error: new Error(eventError.message) };
 
-  const gamesByMatch = groupBy(games ?? [], (game) => game.match_id);
-  const eventsByGame = groupBy(events ?? [], (event) => event.game_id);
+  for (const result of eventResults) {
+    eventsByGame.set(result.gameId, result.data);
+  }
 
   return {
     data: matches.map((match) => ({

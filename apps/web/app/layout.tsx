@@ -3,6 +3,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryProvider } from "@/components/query-provider";
 
 export const metadata: Metadata = {
   title: "Arena's Greatest",
@@ -23,7 +24,9 @@ export default function RootLayout({
       <body>
         <ClerkProvider>
           <ThemeProvider>
-            <TooltipProvider>{children}</TooltipProvider>
+            <QueryProvider>
+              <TooltipProvider>{children}</TooltipProvider>
+            </QueryProvider>
           </ThemeProvider>
         </ClerkProvider>
       </body>

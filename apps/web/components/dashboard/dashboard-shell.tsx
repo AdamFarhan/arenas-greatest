@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
+import { useQuery } from "@tanstack/react-query";
 import {
   ChartNoAxesCombined,
   Swords,
@@ -9,15 +10,14 @@ import {
   Timer,
   TrendingUp,
 } from "lucide-react";
-import { getBrowserSupabase, hasSupabaseConfig } from "@/lib/supabase";
+import { hasSupabaseConfig } from "@/lib/supabase";
 import {
   calculateDashboardStats,
   calculateActivity,
   filterAnalyticsMatches,
-  loadAnalyticsMatches,
-  type AnalyticsMatch,
   type DashboardFilters,
 } from "@/lib/analytics";
+import { fetchAnalyticsMatches, matchQueryKeys } from "@/lib/queries";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardSidebar } from "./dashboard-sidebar";
 import { DashboardHeader } from "./dashboard-header";
@@ -33,15 +33,12 @@ import { PlayPatternPanel } from "./play-pattern-panel";
 import { ActivityCalendar } from "./activity-calendar";
 
 export function DashboardShell() {
-  const { getToken, isLoaded, isSignedIn } = useAuth();
-  const [matches, setMatches] = useState<AnalyticsMatch[]>([]);
+  const { getToken, isLoaded, isSignedIn, userId } = useAuth();
   const [filters, setFilters] = useState<DashboardFilters>({
     range: "30d",
     legendId: "all",
   });
   const [filtersStorageReady, setFiltersStorageReady] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState("");
 
   useEffect(() => {
     try {
@@ -71,27 +68,23 @@ export function DashboardShell() {
     }
   }, [filters, filtersStorageReady]);
 
-  useEffect(() => {
-    if (!isLoaded) return;
-    if (!isSignedIn) {
-      setLoading(false);
-      setStatus("Sign in to load your saved matches.");
-      return;
-    }
-    if (!hasSupabaseConfig()) {
-      setLoading(false);
-      setStatus(
-        "Add Supabase environment variables to load your saved matches.",
-      );
-      return;
-    }
-    const supabase = getBrowserSupabase(getToken);
-    loadAnalyticsMatches(supabase).then((result) => {
-      setMatches(result.data);
-      setStatus(result.error?.message ?? "");
-      setLoading(false);
-    });
-  }, [getToken, isLoaded, isSignedIn]);
+  const canQuery = isLoaded && Boolean(isSignedIn) && hasSupabaseConfig();
+  const matchesQuery = useQuery({
+    queryKey: matchQueryKeys.all(userId),
+    queryFn: () => fetchAnalyticsMatches(getToken),
+    enabled: canQuery,
+  });
+  const matches = matchesQuery.data ?? [];
+  const loading = !isLoaded || (canQuery && matchesQuery.isPending);
+  const status = !isLoaded
+    ? ""
+    : !isSignedIn
+      ? "Sign in to load your saved matches."
+      : !hasSupabaseConfig()
+        ? "Add Supabase environment variables to load your saved matches."
+        : matchesQuery.error instanceof Error
+          ? matchesQuery.error.message
+          : "";
 
   const filteredMatches = useMemo(
     () => filterAnalyticsMatches(matches, filters),
@@ -103,6 +96,7 @@ export function DashboardShell() {
   );
   const activity = useMemo(() => calculateActivity(matches), [matches]);
   const hasData = matches.length > 0;
+  const hasQueryData = matchesQuery.data !== undefined;
 
   return (
     <div className="min-h-screen bg-background text-foreground lg:flex">
@@ -112,9 +106,15 @@ export function DashboardShell() {
           <DashboardHeader>
             <DashboardFiltersBar filters={filters} onChange={setFilters} />
           </DashboardHeader>
+          {status && hasQueryData ? (
+            <p className="text-sm text-muted-foreground">
+              {status}
+              {matchesQuery.isFetching ? " Refreshing..." : ""}
+            </p>
+          ) : null}
           {loading ? (
             <DashboardLoading />
-          ) : status ? (
+          ) : status && !hasQueryData ? (
             <DashboardMessage message={status} />
           ) : !hasData ? (
             <DashboardEmpty />

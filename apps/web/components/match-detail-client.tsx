@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Clock, StickyNote, Trophy } from "lucide-react";
 import MdiIcon from "@mdi/react";
 import {
@@ -12,10 +12,15 @@ import {
   mdiSwordCross,
   mdiTrophy,
 } from "@mdi/js";
-import { getLegendById } from "@riftbound/legends";
 import { demoMatches, type WebGame, type WebMatch } from "@/lib/demo-data";
+import { hasSupabaseConfig } from "@/lib/supabase";
 import { formatDuration } from "@/lib/analytics";
-import { getBrowserSupabase, hasSupabaseConfig } from "@/lib/supabase";
+import {
+  fetchAnalyticsMatches,
+  findAnalyticsMatch,
+  matchQueryKeys,
+} from "@/lib/queries";
+import type { AnalyticsMatch } from "@/lib/analytics";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -29,88 +34,25 @@ import { LegendMatchup } from "@/components/legend-matchup";
 import { cn } from "@/lib/utils";
 
 export function MatchDetailClient({ id }: { id: string }) {
-  const { getToken, isLoaded, isSignedIn } = useAuth();
-  const [cloudMatch, setCloudMatch] = useState<WebMatch | undefined>();
-  const [status, setStatus] = useState("");
+  const { getToken, isLoaded, isSignedIn, userId } = useAuth();
+  const canQuery = isLoaded && Boolean(isSignedIn) && hasSupabaseConfig();
+  const matchesQuery = useQuery({
+    queryKey: matchQueryKeys.all(userId),
+    queryFn: () => fetchAnalyticsMatches(getToken),
+    enabled: canQuery,
+  });
+  const cloudMatch = toWebMatch(findAnalyticsMatch(matchesQuery.data, id));
   const match = cloudMatch ?? demoMatches.find((item) => item.id === id);
-
-  useEffect(() => {
-    if (!isLoaded || !isSignedIn || !hasSupabaseConfig()) return;
-
-    const supabase = getBrowserSupabase(getToken);
-    (async () => {
-      const { data: matchRow, error: matchError } = await supabase
-        .from("matches")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (matchError || !matchRow) {
-        setStatus(matchError?.message ?? "Match not found.");
-        return;
-      }
-
-      const { data: gameRows, error: gamesError } = await supabase
-        .from("games")
-        .select("*")
-        .eq("match_id", id)
-        .order("game_number");
-
-      if (gamesError) {
-        setStatus(gamesError.message);
-        return;
-      }
-
-      const games: WebGame[] = [];
-
-      for (const game of gameRows ?? []) {
-        const { data: eventRows } = await supabase
-          .from("score_events")
-          .select("*")
-          .eq("game_id", game.id)
-          .order("created_at");
-
-        games.push({
-          game_number: game.game_number,
-          starting_player: game.starting_player,
-          winning_point: game.winning_point,
-          winner: game.winner,
-          end_reason: game.end_reason,
-          player_score: game.player_score,
-          opponent_score: game.opponent_score,
-          duration_seconds: game.duration_seconds,
-          events: (eventRows ?? []).map((event) => ({
-            event_type: event.event_type,
-            player_side: event.player_side,
-            points_delta: event.points_delta,
-            resulting_player_score: event.resulting_player_score,
-            resulting_opponent_score: event.resulting_opponent_score,
-            created_at: event.created_at,
-          })),
-        });
-      }
-
-      setCloudMatch({
-        id: matchRow.id,
-        played_at: matchRow.played_at,
-        winner: matchRow.winner,
-        player_game_wins: matchRow.player_game_wins,
-        opponent_game_wins: matchRow.opponent_game_wins,
-        duration_seconds: matchRow.duration_seconds,
-        player_legend:
-          getLegendById(matchRow.player_legend_id)?.name ??
-          matchRow.player_legend_id,
-        player_legend_id: matchRow.player_legend_id,
-        opponent_legend:
-          getLegendById(matchRow.opponent_legend_id)?.name ??
-          matchRow.opponent_legend_id,
-        opponent_legend_id: matchRow.opponent_legend_id,
-        notes: matchRow.notes ?? "",
-        games,
-      });
-      setStatus("");
-    })();
-  }, [getToken, id, isLoaded, isSignedIn]);
+  const loading = !isLoaded || (canQuery && matchesQuery.isPending);
+  const status = !isLoaded
+    ? ""
+    : !isSignedIn
+      ? "Sign in to load your saved matches."
+      : !hasSupabaseConfig()
+        ? "Add Supabase environment variables to load your saved matches."
+        : matchesQuery.error instanceof Error
+          ? matchesQuery.error.message
+          : "";
 
   return (
     <div className="min-h-screen bg-background text-foreground lg:flex">
@@ -125,7 +67,9 @@ export function MatchDetailClient({ id }: { id: string }) {
             Matches
           </Link>
 
-          {!match ? (
+          {loading ? (
+            <MatchDetailSkeleton />
+          ) : !match ? (
             <Card>
               <CardHeader>
                 <CardTitle>Match not found</CardTitle>
@@ -137,8 +81,10 @@ export function MatchDetailClient({ id }: { id: string }) {
           ) : (
             <>
               <MatchHero match={match} />
-              {status ? (
-                <p className="text-sm text-muted-foreground">{status}</p>
+              {status || matchesQuery.isFetching ? (
+                <p className="text-sm text-muted-foreground">
+                  {status || "Refreshing..."}
+                </p>
               ) : null}
 
               <section className="grid gap-4 md:grid-cols-3">
@@ -208,6 +154,60 @@ export function MatchDetailClient({ id }: { id: string }) {
       </main>
     </div>
   );
+}
+
+function MatchDetailSkeleton() {
+  return (
+    <div className="grid gap-6">
+      <div className="h-36 animate-pulse rounded-lg border bg-card" />
+      <div className="grid gap-4 md:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div
+            key={index}
+            className="h-28 animate-pulse rounded-lg border bg-card"
+          />
+        ))}
+      </div>
+      <div className="h-32 animate-pulse rounded-lg border bg-card" />
+      <div className="h-72 animate-pulse rounded-lg border bg-card" />
+    </div>
+  );
+}
+
+function toWebMatch(match: AnalyticsMatch | undefined): WebMatch | undefined {
+  if (!match) return undefined;
+
+  return {
+    id: match.id,
+    played_at: match.played_at,
+    winner: match.winner,
+    player_game_wins: match.player_game_wins,
+    opponent_game_wins: match.opponent_game_wins,
+    duration_seconds: match.duration_seconds,
+    player_legend: match.playerLegend,
+    player_legend_id: match.playerLegendId,
+    opponent_legend: match.opponentLegend,
+    opponent_legend_id: match.opponentLegendId,
+    notes: match.notes ?? "",
+    games: match.games.map((game) => ({
+      game_number: game.game_number,
+      starting_player: game.starting_player,
+      winning_point: game.winning_point,
+      winner: game.winner,
+      end_reason: game.end_reason,
+      player_score: game.player_score,
+      opponent_score: game.opponent_score,
+      duration_seconds: game.duration_seconds,
+      events: game.events.map((event) => ({
+        event_type: event.event_type,
+        player_side: event.player_side,
+        points_delta: event.points_delta,
+        resulting_player_score: event.resulting_player_score,
+        resulting_opponent_score: event.resulting_opponent_score,
+        created_at: event.created_at,
+      })),
+    })),
+  };
 }
 
 function MatchHero({ match }: { match: WebMatch }) {
@@ -292,6 +292,7 @@ function MetricCard({
 }
 
 function GameBreakdown({ game }: { game: WebGame }) {
+  console.log({ game });
   return (
     <Card>
       <CardHeader className="gap-3 sm:flex-row sm:items-start sm:justify-between">

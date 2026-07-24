@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useAuth } from "@clerk/nextjs";
-import { getBrowserSupabase, hasSupabaseConfig } from "@/lib/supabase";
+import { useQuery } from "@tanstack/react-query";
+import { hasSupabaseConfig } from "@/lib/supabase";
 import {
   formatDuration,
-  loadAnalyticsMatches,
   type AnalyticsMatch,
 } from "@/lib/analytics";
+import { fetchAnalyticsMatches, matchQueryKeys } from "@/lib/queries";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { LegendAvatar } from "@/components/legend-avatar";
 import { LegendMatchup } from "@/components/legend-matchup";
@@ -30,32 +31,26 @@ type TimeMatchGroup = {
 };
 
 export function MatchHistoryClient() {
-  const { getToken, isLoaded, isSignedIn } = useAuth();
-  const [matches, setMatches] = useState<AnalyticsMatch[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState("");
+  const { getToken, isLoaded, isSignedIn, userId } = useAuth();
+  const canQuery = isLoaded && Boolean(isSignedIn) && hasSupabaseConfig();
+  const matchesQuery = useQuery({
+    queryKey: matchQueryKeys.all(userId),
+    queryFn: () => fetchAnalyticsMatches(getToken),
+    enabled: canQuery,
+  });
+  const matches = matchesQuery.data ?? [];
+  const loading = !isLoaded || (canQuery && matchesQuery.isPending);
+  const status = !isLoaded
+    ? ""
+    : !isSignedIn
+      ? "Sign in to load your saved matches."
+      : !hasSupabaseConfig()
+        ? "Add Supabase environment variables to load your saved matches."
+        : matchesQuery.error instanceof Error
+          ? matchesQuery.error.message
+          : "";
+  const hasQueryData = matchesQuery.data !== undefined;
   const groupedMatches = useMemo(() => groupMatches(matches), [matches]);
-
-  useEffect(() => {
-    if (!isLoaded) return;
-    if (!isSignedIn) {
-      setLoading(false);
-      setStatus("Sign in to load your saved matches.");
-      return;
-    }
-    if (!hasSupabaseConfig()) {
-      setLoading(false);
-      setStatus("Add Supabase environment variables to load your saved matches.");
-      return;
-    }
-
-    const supabase = getBrowserSupabase(getToken);
-    loadAnalyticsMatches(supabase).then((result) => {
-      setMatches(result.data);
-      setStatus(result.error?.message ?? "");
-      setLoading(false);
-    });
-  }, [getToken, isLoaded, isSignedIn]);
 
   return (
     <div className="min-h-screen bg-background text-foreground lg:flex">
@@ -71,8 +66,16 @@ export function MatchHistoryClient() {
             </p>
           </header>
 
+          {status && hasQueryData ? (
+            <p className="text-sm text-muted-foreground">
+              {status}
+              {matchesQuery.isFetching ? " Refreshing..." : ""}
+            </p>
+          ) : null}
           {loading ? <MatchHistorySkeleton /> : null}
-          {!loading && status ? <MatchHistoryMessage message={status} /> : null}
+          {!loading && status && !hasQueryData ? (
+            <MatchHistoryMessage message={status} />
+          ) : null}
           {!loading && !status && groupedMatches.length === 0 ? (
             <MatchHistoryMessage message="No matches saved yet." />
           ) : null}
