@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChartNoAxesCombined, History, Home } from "lucide-react";
+import { History, Home, ChartNoAxesCombined } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { UserButton } from "@clerk/nextjs";
@@ -38,10 +38,10 @@ export function DashboardSidebar() {
           active={pathname.startsWith("/matches")}
         />
         <NavItem
-          href="/#insights"
+          href="/matrix"
           icon={<ChartNoAxesCombined />}
-          label="Insights"
-          active={false}
+          label="Stats"
+          active={pathname.startsWith("/matrix")}
         />
       </nav>
       <div className="mt-auto hidden border-t pt-5 lg:block">
