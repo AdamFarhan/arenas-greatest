@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Clock3, Swords, Trophy, TrendingUp } from "lucide-react";
+import {
+  ChevronDown,
+  Clock3,
+  ExternalLink,
+  Swords,
+  Trophy,
+  TrendingUp,
+} from "lucide-react";
 import { LEGENDS, type Legend } from "@riftbound/legends";
 import { useAuth } from "@clerk/nextjs";
 import { useMemo } from "react";
@@ -23,6 +30,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { LegendMatchup } from "@/components/legend-matchup";
 import { LegendAvatar } from "@/components/legend-avatar";
 import { LegendScoringComparison } from "@/components/legend-scoring-comparison";
+import { GameBreakdown } from "@/components/game-breakdown";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -212,56 +220,110 @@ function MatchHistory({
       </div>
       <div className="grid gap-3">
         {matches.map((match) => (
-          <Link
-            key={match.id}
-            href={`/matches/${match.id}`}
-            className="grid min-h-24 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-lg border bg-card p-4 transition-colors hover:border-primary/50 hover:bg-accent/30"
-          >
-            <LegendMatchup
-              playerLegendId={match.playerLegendId}
-              playerName={match.playerLegend}
-              opponentLegendId={match.opponentLegendId}
-              opponentName={match.opponentLegend}
-              size="lg"
-            />
-            <div className="min-w-0">
-              <p className="truncate text-lg font-black tracking-normal">
-                vs {shortName(match.opponentLegend)}
-              </p>
-              <p className="text-sm font-semibold text-muted-foreground">
-                {new Date(match.played_at).toLocaleDateString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-                {match.duration_seconds !== null
-                  ? ` · ${formatDuration(match.duration_seconds)}`
-                  : ""}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-3xl font-black leading-none">
-                {match.player_game_wins}-{match.opponent_game_wins}
-              </p>
-              <p
-                className={cn(
-                  "mt-1 text-xs font-bold uppercase",
-                  match.winner === "player" && "text-primary",
-                  match.winner === "opponent" && "text-red-400",
-                  match.winner === "tie" && "text-muted-foreground",
-                )}
-              >
-                {match.winner === "player"
-                  ? "Victory"
-                  : match.winner === "opponent"
-                    ? "Defeat"
-                    : "Tie"}
-              </p>
-            </div>
-          </Link>
+          <MatchHistoryAccordion key={match.id} match={match} />
         ))}
       </div>
     </section>
+  );
+}
+
+function MatchHistoryAccordion({
+  match,
+}: {
+  match: ReturnType<typeof filterLegendMatches>[number];
+}) {
+  const result =
+    match.winner === "player"
+      ? "Victory"
+      : match.winner === "opponent"
+        ? "Defeat"
+        : "Tie";
+
+  return (
+    <details className="group overflow-hidden rounded-lg border bg-card transition-colors open:border-primary/50 open:bg-secondary">
+      <summary className="grid min-h-24 cursor-pointer list-none grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-4 p-4 transition-colors hover:bg-accent/30 [&::-webkit-details-marker]:hidden">
+        <LegendMatchup
+          playerLegendId={match.playerLegendId}
+          playerName={match.playerLegend}
+          opponentLegendId={match.opponentLegendId}
+          opponentName={match.opponentLegend}
+          size="lg"
+        />
+        <div className="min-w-0">
+          <p className="truncate text-lg font-black tracking-normal">
+            vs {shortName(match.opponentLegend)}
+          </p>
+          <p className="text-sm font-semibold text-muted-foreground">
+            {new Date(match.played_at).toLocaleDateString(undefined, {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
+            {match.duration_seconds !== null
+              ? ` · ${formatDuration(match.duration_seconds)}`
+              : ""}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-3xl font-black leading-none">
+            {match.player_game_wins}-{match.opponent_game_wins}
+          </p>
+          <p
+            className={cn(
+              "mt-1 text-xs font-bold uppercase",
+              match.winner === "player" && "text-primary",
+              match.winner === "opponent" && "text-red-400",
+              match.winner === "tie" && "text-muted-foreground",
+            )}
+          >
+            {result}
+          </p>
+        </div>
+        <ChevronDown
+          className="h-5 w-5 text-muted-foreground transition-transform group-open:rotate-180"
+          aria-hidden
+        />
+      </summary>
+      <div className="space-y-5 border-t bg-secondary p-4 sm:p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-sm font-bold">Match details</p>
+            <p className="text-sm text-muted-foreground">
+              {match.games.length} {match.games.length === 1 ? "game" : "games"}{" "}
+              · played{" "}
+              {new Date(match.played_at).toLocaleTimeString(undefined, {
+                hour: "numeric",
+                minute: "2-digit",
+              })}
+            </p>
+          </div>
+          <Link
+            href={`/matches/${match.id}`}
+            className="inline-flex w-fit items-center gap-2 rounded-md border px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          >
+            Open full match page <ExternalLink className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+        {match.notes && (
+          <div className="rounded-md border bg-card p-3 text-sm text-muted-foreground">
+            <span className="font-semibold text-foreground">Notes: </span>
+            {match.notes || "No notes saved for this match."}
+          </div>
+        )}
+
+        <div className="space-y-3">
+          {match.games.length ? (
+            match.games.map((game) => (
+              <GameBreakdown key={game.id} game={game} className="bg-card" />
+            ))
+          ) : (
+            <p className="rounded-md border bg-card p-3 text-sm text-muted-foreground">
+              No games saved for this match.
+            </p>
+          )}
+        </div>
+      </div>
+    </details>
   );
 }
 
