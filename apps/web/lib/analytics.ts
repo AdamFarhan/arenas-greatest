@@ -54,7 +54,12 @@ export type DashboardStats = {
   matchWinRate: number;
   gameWinRate: number;
   averageDurationSeconds: number | null;
-  trend: Array<{ label: string; winRate: number }>;
+  trend: Array<{
+    label: string;
+    winRate: number;
+    firstWinRate: number | null;
+    secondWinRate: number | null;
+  }>;
   matchups: Array<{ name: string; value: number; color: string }>;
   scoring: Array<{ name: string; value: number; color: string }>;
   recentMatches: AnalyticsMatch[];
@@ -206,6 +211,10 @@ export function calculateDashboardStats(
     .filter((game) => Math.abs(game.player_score - game.opponent_score) <= 3);
   let cumulativeDecided = 0;
   let cumulativeWins = 0;
+  let cumulativeFirstDecided = 0;
+  let cumulativeFirstWins = 0;
+  let cumulativeSecondDecided = 0;
+  let cumulativeSecondWins = 0;
   const trend = [
     ...groupBy([...matches].reverse(), (match) =>
       localDateKey(match.played_at),
@@ -216,6 +225,17 @@ export function calculateDashboardStats(
       cumulativeDecided += 1;
       if (match.winner === "player") cumulativeWins += 1;
     });
+    dayMatches
+      .flatMap((match) => match.games)
+      .forEach((game) => {
+        if (game.starting_player === "player") {
+          cumulativeFirstDecided += 1;
+          if (game.winner === "player") cumulativeFirstWins += 1;
+          return;
+        }
+        cumulativeSecondDecided += 1;
+        if (game.winner === "player") cumulativeSecondWins += 1;
+      });
 
     const firstMatch = dayMatches[0];
     return {
@@ -223,6 +243,12 @@ export function calculateDashboardStats(
       winRate: cumulativeDecided
         ? (cumulativeWins / cumulativeDecided) * 100
         : 0,
+      firstWinRate: cumulativeFirstDecided
+        ? (cumulativeFirstWins / cumulativeFirstDecided) * 100
+        : null,
+      secondWinRate: cumulativeSecondDecided
+        ? (cumulativeSecondWins / cumulativeSecondDecided) * 100
+        : null,
     };
   });
 
