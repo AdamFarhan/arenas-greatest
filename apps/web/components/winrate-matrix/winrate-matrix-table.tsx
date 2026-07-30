@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { LegendAvatar } from "@/components/legend-avatar";
 import { MatrixCell } from "./matrix-cell";
 import { emptyWinrateRecord, type WinrateMatrix } from "@/lib/winrate-matrix";
@@ -47,7 +48,7 @@ export function WinrateMatrixTable({ matrix }: { matrix: WinrateMatrix }) {
                 scope="row"
                 className="sticky left-0 z-10 border-r bg-card p-3 text-left"
               >
-                <div className="flex items-center gap-3">
+                <Link href={`/legends/${legend.id}`} className="flex items-center gap-3 rounded-md transition-opacity hover:opacity-75">
                   <LegendAvatar
                     legendId={legend.id}
                     name={legend.name}
@@ -58,10 +59,10 @@ export function WinrateMatrixTable({ matrix }: { matrix: WinrateMatrix }) {
                       {shortLegendName(legend.name)}
                     </p>
                   </div>
-                </div>
+                </Link>
               </th>
               <td className="w-28 min-w-28 border-r p-0 align-middle">
-                <MatrixCell record={summary} />
+                <MatrixCell record={summary} href={summary.total ? `/legends/${legend.id}` : undefined} />
               </td>
               {matrix.columns.map(({ legend: opponent }) => (
                 <td
@@ -70,6 +71,11 @@ export function WinrateMatrixTable({ matrix }: { matrix: WinrateMatrix }) {
                 >
                   <MatrixCell
                     record={cells.get(opponent.id) ?? emptyWinrateRecord()}
+                    href={
+                      (cells.get(opponent.id)?.total ?? 0) > 0
+                        ? `/legends/${legend.id}/${opponent.id}`
+                        : undefined
+                    }
                   />
                 </td>
               ))}

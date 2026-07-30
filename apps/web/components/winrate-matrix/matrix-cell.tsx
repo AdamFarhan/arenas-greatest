@@ -1,6 +1,7 @@
+import Link from "next/link";
 import type { WinrateRecord } from "@/lib/winrate-matrix";
 
-export function MatrixCell({ record }: { record: WinrateRecord }) {
+export function MatrixCell({ record, href }: { record: WinrateRecord; href?: string | undefined }) {
   if (!record.total) {
     return <div className="grid min-h-24 place-items-center text-lg text-muted-foreground">-</div>;
   }
@@ -8,9 +9,9 @@ export function MatrixCell({ record }: { record: WinrateRecord }) {
   const heatmap = getHeatmapStyle(record.winRate);
   const winRateLabel = record.winRate === null ? "-" : `${Math.round(record.winRate * 100)}%`;
 
-  return (
+  const content = (
     <div
-      className="flex min-h-24 flex-col items-center justify-center gap-1 border-l border-white/10 px-2 text-center"
+      className="flex min-h-24 flex-col items-center justify-center gap-1 border-l border-white/10 px-2 text-center transition-opacity hover:opacity-80"
       style={heatmap}
       aria-label={`${winRateLabel} win rate over ${record.total} ${record.total === 1 ? "match" : "matches"}: ${formatRecord(record)}`}
     >
@@ -21,6 +22,8 @@ export function MatrixCell({ record }: { record: WinrateRecord }) {
       <span className="text-xs font-bold opacity-75">{formatRecord(record)}</span>
     </div>
   );
+
+  return href ? <Link href={href} aria-label={`Open details: ${winRateLabel} win rate over ${record.total} ${record.total === 1 ? "match" : "matches"}`}>{content}</Link> : content;
 }
 
 export function formatRecord(record: WinrateRecord) {

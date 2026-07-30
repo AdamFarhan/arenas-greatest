@@ -75,6 +75,25 @@ export type DashboardStats = {
   activity: Array<{ date: string; count: number }>;
 };
 
+export type MatchRecord = {
+  wins: number;
+  losses: number;
+  ties: number;
+  total: number;
+  winRate: number | null;
+};
+
+export type ScoringComparison = {
+  name: string;
+  playerPoints: number;
+  opponentPoints: number;
+};
+
+export type OpponentPerformance = MatchRecord & {
+  legendId: string;
+  name: string;
+};
+
 const chartColors = [
   "var(--chart-1)",
   "var(--chart-2)",
@@ -157,6 +176,75 @@ export function filterAnalyticsMatches(
       (!cutoff || new Date(match.played_at).getTime() >= cutoff) &&
       (filters.legendId === "all" || match.playerLegendId === filters.legendId),
   );
+}
+
+export function filterLegendMatches(
+  matches: AnalyticsMatch[],
+  playerLegendId: string,
+  opponentLegendId?: string,
+) {
+  return matches.filter(
+    (match) =>
+      match.playerLegendId === playerLegendId &&
+      (!opponentLegendId || match.opponentLegendId === opponentLegendId),
+  );
+}
+
+export function calculateMatchRecord(matches: AnalyticsMatch[]): MatchRecord {
+  const wins = matches.filter((match) => match.winner === "player").length;
+  const losses = matches.filter((match) => match.winner === "opponent").length;
+  const ties = matches.length - wins - losses;
+  const decided = wins + losses;
+
+  return {
+    wins,
+    losses,
+    ties,
+    total: matches.length,
+    winRate: decided ? (wins / decided) * 100 : null,
+  };
+}
+
+export function calculateScoringComparison(
+  matches: AnalyticsMatch[],
+): ScoringComparison[] {
+  const eventTypes = ["holding", "conquering", "ability"];
+  const totals = new Map<string, { playerPoints: number; opponentPoints: number }>();
+
+  for (const eventType of eventTypes) {
+    totals.set(eventType, { playerPoints: 0, opponentPoints: 0 });
+  }
+
+  matches
+    .flatMap((match) => match.games.flatMap((game) => game.events))
+    .forEach((event) => {
+      const total = totals.get(event.event_type);
+      if (!total) return;
+      if (event.player_side === "player") total.playerPoints += Math.max(0, event.points_delta);
+      else total.opponentPoints += Math.max(0, event.points_delta);
+    });
+
+  return eventTypes.map((eventType) => ({
+    name: formatLabel(eventType),
+    ...(totals.get(eventType) ?? { playerPoints: 0, opponentPoints: 0 }),
+  }));
+}
+
+export function calculateOpponentPerformance(
+  matches: AnalyticsMatch[],
+): OpponentPerformance[] {
+  const byOpponent = groupBy(matches, (match) => match.opponentLegendId);
+
+  return [...byOpponent.entries()]
+    .map(([legendId, opponentMatches]) => ({
+      legendId,
+      name: opponentMatches[0]?.opponentLegend ?? legendId,
+      ...calculateMatchRecord(opponentMatches),
+    }))
+    .sort(
+      (left, right) =>
+        right.total - left.total || left.name.localeCompare(right.name),
+    );
 }
 
 export function calculateDashboardStats(
