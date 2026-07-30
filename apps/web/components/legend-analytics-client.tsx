@@ -10,7 +10,6 @@ import { useQuery } from "@tanstack/react-query";
 import {
   calculateDashboardStats,
   calculateMatchRecord,
-  calculateOpponentPerformance,
   calculateScoringComparison,
   filterLegendMatches,
   formatDuration,
@@ -20,9 +19,6 @@ import { hasSupabaseConfig } from "@/lib/supabase";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { WinRateTrendChart } from "@/components/dashboard/win-rate-trend-chart";
-import { CloseGamesPanel } from "@/components/dashboard/close-games-panel";
-import { PlayPatternPanel } from "@/components/dashboard/play-pattern-panel";
-import { AnalyticsPanel } from "@/components/dashboard/analytics-panel";
 import { Card, CardContent } from "@/components/ui/card";
 import { LegendMatchup } from "@/components/legend-matchup";
 import { LegendAvatar } from "@/components/legend-avatar";
@@ -59,10 +55,6 @@ export function LegendAnalyticsClient({
   const record = useMemo(() => calculateMatchRecord(matches), [matches]);
   const stats = useMemo(() => calculateDashboardStats(matches), [matches]);
   const scoring = useMemo(() => calculateScoringComparison(matches), [matches]);
-  const opponents = useMemo(
-    () => calculateOpponentPerformance(matches),
-    [matches],
-  );
   const loading = !isLoaded || (canQuery && matchesQuery.isPending);
   const status = !isLoaded
     ? ""
@@ -117,11 +109,6 @@ export function LegendAnalyticsClient({
                       }
                     />
                   </h1>
-                  {/* <p className="mt-2 text-sm text-muted-foreground">
-                    {isMatchup
-                      ? "Every recorded game in this matchup."
-                      : "Every recorded match with this legend."}
-                  </p> */}
                 </div>
               </div>
               <div className="text-left sm:text-right">
@@ -173,16 +160,6 @@ export function LegendAnalyticsClient({
                 <WinRateTrendChart data={stats.trend} />
                 <LegendScoringComparison data={scoring} />
               </section>
-              <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                <CloseGamesPanel data={stats.closeGames} />
-                <PlayPatternPanel data={stats.playPattern} />
-                {!isMatchup ? (
-                  <OpponentPerformancePanel
-                    playerLegend={playerLegend}
-                    opponents={opponents}
-                  />
-                ) : null}
-              </section>
               <MatchHistory matches={matches} />
             </>
           ) : null}
@@ -223,46 +200,6 @@ function MatchupSelector({
   );
 }
 
-function OpponentPerformancePanel({
-  playerLegend,
-  opponents,
-}: {
-  playerLegend: Legend;
-  opponents: ReturnType<typeof calculateOpponentPerformance>;
-}) {
-  return (
-    <AnalyticsPanel
-      title="Opponent performance"
-      description="Open a matchup for its full analysis"
-      className="md:col-span-2 xl:col-span-1"
-    >
-      <div className="max-h-72 space-y-2 overflow-auto pr-1">
-        {opponents.map((opponent) => (
-          <Link
-            key={opponent.legendId}
-            href={`/legends/${playerLegend.id}/${opponent.legendId}`}
-            className="flex items-center justify-between gap-3 rounded-md p-2 transition-colors hover:bg-accent"
-          >
-            <span className="min-w-0 truncate text-sm font-semibold">
-              {shortName(opponent.name)}
-            </span>
-            <span className="shrink-0 text-right text-xs">
-              <strong className="text-primary">
-                {opponent.winRate === null
-                  ? "—"
-                  : `${opponent.winRate.toFixed(0)}%`}
-              </strong>
-              <span className="ml-2 text-muted-foreground">
-                {opponent.wins}W–{opponent.losses}L · {opponent.total}
-              </span>
-            </span>
-          </Link>
-        ))}
-      </div>
-    </AnalyticsPanel>
-  );
-}
-
 function MatchHistory({
   matches,
 }: {
@@ -272,7 +209,6 @@ function MatchHistory({
     <section className="space-y-3">
       <div>
         <h2 className="text-2xl font-black tracking-normal">Match history</h2>
-        <p className="text-sm text-muted-foreground">Newest matches first.</p>
       </div>
       <div className="grid gap-3">
         {matches.map((match) => (
