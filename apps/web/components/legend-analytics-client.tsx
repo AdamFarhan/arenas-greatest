@@ -137,7 +137,7 @@ export function LegendAnalyticsClient({
           {loading ? <Loading /> : null}
           {!loading && status ? <Message message={status} /> : null}
           {!loading && !status && matches.length === 0 ? (
-            <Message message="No matches recorded for this selection yet." />
+            <Message message="No games recorded for this matchup yet." />
           ) : null}
           {!loading && !status && matches.length > 0 ? (
             <>
@@ -260,7 +260,7 @@ function NotesList({
     return (
       <Card>
         <CardContent className="py-8 text-center text-sm text-muted-foreground">
-          No notes saved for this selection yet.
+          No notes saved yet.
         </CardContent>
       </Card>
     );
@@ -362,9 +362,10 @@ function MatchHistoryAccordion({
           </div>
           <Link
             href={`/matches/${match.id}`}
-            className="inline-flex w-fit items-center gap-2 rounded-md border px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            className="inline-flex w-fit items-center gap-2 rounded-md border px-3 py-2 text-xs font-semibold bg-background text-secondary-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            target="_blank"
           >
-            Open full match page <ExternalLink className="h-3.5 w-3.5" />
+            Open full match <ExternalLink className="h-3.5 w-3.5" />
           </Link>
         </div>
         {match.notes && (
