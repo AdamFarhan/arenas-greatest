@@ -15,6 +15,7 @@
     "@mdi/js": "^7.4.47",
     "@mdi/react": "^1.6.1",
     "@radix-ui/react-select": "^2.3.4",
+    "@radix-ui/react-tabs": "^1.1.21",
     "@radix-ui/react-tooltip": "^1.2.14",
     "@riftbound/core": "0.1.0",
     "@riftbound/db": "0.1.0",

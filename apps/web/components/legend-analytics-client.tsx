@@ -32,6 +32,7 @@ import { LegendAvatar } from "@/components/legend-avatar";
 import { LegendScoringComparison } from "@/components/legend-scoring-comparison";
 import { GameBreakdown } from "@/components/game-breakdown";
 import { cn } from "@/lib/utils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -214,16 +215,78 @@ function MatchHistory({
   matches: ReturnType<typeof filterLegendMatches>;
 }) {
   return (
-    <section className="space-y-3">
-      <div>
-        <h2 className="text-2xl font-black tracking-normal">Match history</h2>
-      </div>
-      <div className="grid gap-3">
-        {matches.map((match) => (
-          <MatchHistoryAccordion key={match.id} match={match} />
-        ))}
-      </div>
+    <section>
+      <Tabs defaultValue="history">
+        <TabsList
+          aria-label="Legend analysis details"
+          className="h-auto w-full justify-start gap-6 rounded-none bg-transparent p-0"
+        >
+          <TabsTrigger
+            value="history"
+            className="rounded-none border-b-2 border-transparent px-1 pb-3 pt-0 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-none"
+          >
+            Match History
+          </TabsTrigger>
+          <TabsTrigger
+            value="notes"
+            className="rounded-none border-b-2 border-transparent px-1 pb-3 pt-0 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-none"
+          >
+            Notes
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="history">
+          <div className="grid gap-3">
+            {matches.map((match) => (
+              <MatchHistoryAccordion key={match.id} match={match} />
+            ))}
+          </div>
+        </TabsContent>
+        <TabsContent value="notes">
+          <NotesList matches={matches} />
+        </TabsContent>
+      </Tabs>
     </section>
+  );
+}
+
+function NotesList({
+  matches,
+}: {
+  matches: ReturnType<typeof filterLegendMatches>;
+}) {
+  const notedMatches = matches.filter((match) => Boolean(match.notes?.trim()));
+
+  if (!notedMatches.length) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center text-sm text-muted-foreground">
+          No notes saved for this selection yet.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="grid gap-3">
+      {notedMatches.map((match) => (
+        <Link
+          key={match.id}
+          href={`/matches/${match.id}`}
+          className="rounded-lg border bg-card p-4 transition-colors hover:border-primary/50 hover:bg-accent/30"
+        >
+          <p className="text-base font-semibold leading-6">{match.notes}</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {shortName(match.playerLegend)} vs {shortName(match.opponentLegend)}{" "}
+            ·{" "}
+            {new Date(match.played_at).toLocaleDateString(undefined, {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </p>
+        </Link>
+      ))}
+    </div>
   );
 }
 
