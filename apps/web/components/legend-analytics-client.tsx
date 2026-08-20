@@ -197,13 +197,11 @@ function MatchupSelector({
       </SelectTrigger>
       <SelectContent className="max-h-80">
         <SelectItem value="all">All</SelectItem>
-        {LEGENDS.filter((legend) => legend.id !== playerLegend.id).map(
-          (legend) => (
-            <SelectItem key={legend.id} value={legend.id}>
-              {shortName(legend.name)}
-            </SelectItem>
-          ),
-        )}
+        {LEGENDS.map((legend) => (
+          <SelectItem key={legend.id} value={legend.id}>
+            {shortName(legend.name)}
+          </SelectItem>
+        ))}
       </SelectContent>
     </Select>
   );
