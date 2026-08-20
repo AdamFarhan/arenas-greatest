@@ -19,6 +19,9 @@ If the project already has the earlier migrations applied, run only the new migr
 ```txt
 supabase/migrations/0003_match_duration_indexes.sql
 supabase/migrations/0004_use_clerk_auth.sql
+supabase/migrations/0005_upsert_released_legends.sql
+supabase/migrations/0006_allow_match_deletes.sql
+supabase/migrations/0007_allow_match_updates.sql
 ```
 
 ## Clerk auth

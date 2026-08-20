@@ -87,6 +87,11 @@ create policy "Users can read own matches"
 create policy "Users can insert own matches"
   on public.matches for insert with check ((auth.jwt()->>'sub') = user_id);
 
+create policy "Users can update own matches"
+  on public.matches for update
+  using ((auth.jwt()->>'sub') = user_id)
+  with check ((auth.jwt()->>'sub') = user_id);
+
 create policy "Users can delete own matches"
   on public.matches for delete using ((auth.jwt()->>'sub') = user_id);
 

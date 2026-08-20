@@ -8,18 +8,21 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { getLegendById } from "@riftbound/legends";
+import { LEGENDS, getLegendById } from "@riftbound/legends";
 import {
   deleteSavedMatch,
   getSavedMatch,
+  updateSavedMatch,
   type SavedMatchDetail,
   type SavedMatchSummary,
 } from "@riftbound/db";
 import { MenuScreen } from "@/components/bottom-menu";
+import { Button, Field } from "@/components/primitives";
 import {
   ScoreHistoryTable,
   type ScoreHistoryEntry,
@@ -40,6 +43,7 @@ export default function MatchDetailScreen() {
     matches,
     loadMatchesIfNeeded,
     removeCachedMatch,
+    upsertCachedMatch,
     status: savedMatchesStatus,
   } = useSavedMatches();
   const [detail, setDetail] = useState<SavedMatchDetail | null>(null);
@@ -49,6 +53,8 @@ export default function MatchDetailScreen() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
   const cachedMatch = useMemo(
     () => matches.find((savedMatch) => savedMatch.id === id) ?? null,
     [id, matches],
@@ -162,6 +168,50 @@ export default function MatchDetailScreen() {
     setDeleteConfirmOpen(true);
   }
 
+  async function saveMatchEdit({
+    playerLegendId,
+    opponentLegendId,
+    notes,
+  }: {
+    playerLegendId: string;
+    opponentLegendId: string;
+    notes: string;
+  }) {
+    if (!id || isSavingEdit) return;
+
+    if (!hasSupabaseConfig()) {
+      setActionError("Saved match history is unavailable right now.");
+      return;
+    }
+
+    if (!session.isSignedIn) {
+      setActionError("Sign in to edit this match.");
+      return;
+    }
+
+    setActionError("");
+    setIsSavingEdit(true);
+    const { data: updatedMatch, error } = await updateSavedMatch(
+      getMobileSupabase(session.getSupabaseAccessToken),
+      id,
+      {
+        player_legend_id: playerLegendId,
+        opponent_legend_id: opponentLegendId,
+        notes,
+      },
+    );
+    setIsSavingEdit(false);
+
+    if (error || !updatedMatch) {
+      setActionError(error?.message ?? "Could not update match.");
+      return;
+    }
+
+    upsertCachedMatch(updatedMatch);
+    setDetail((current) => (current ? { ...current, ...updatedMatch } : current));
+    setEditOpen(false);
+  }
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
@@ -171,9 +221,13 @@ export default function MatchDetailScreen() {
         headerRight={
           <MatchSettingsButton
             isOpen={settingsOpen}
-            isDeleting={isDeleting}
+            isBusy={isDeleting || isSavingEdit}
             onOpen={() => setSettingsOpen(true)}
             onClose={() => setSettingsOpen(false)}
+            onEdit={() => {
+              setSettingsOpen(false);
+              setEditOpen(true);
+            }}
             onDelete={confirmDeleteMatch}
           />
         }
@@ -185,6 +239,13 @@ export default function MatchDetailScreen() {
           onConfirm={() => {
             void deleteMatch();
           }}
+        />
+        <EditMatchDialog
+          isOpen={editOpen}
+          isSaving={isSavingEdit}
+          match={match}
+          onCancel={() => setEditOpen(false)}
+          onSave={saveMatchEdit}
         />
         <ScrollView contentContainerStyle={styles.content}>
           {!match && isLoading ? <DetailSkeleton /> : null}
@@ -286,15 +347,17 @@ function DeleteMatchDialog({
 
 function MatchSettingsButton({
   isOpen,
-  isDeleting,
+  isBusy,
   onOpen,
   onClose,
+  onEdit,
   onDelete,
 }: {
   isOpen: boolean;
-  isDeleting: boolean;
+  isBusy: boolean;
   onOpen: () => void;
   onClose: () => void;
+  onEdit: () => void;
   onDelete: () => void;
 }) {
   return (
@@ -302,15 +365,15 @@ function MatchSettingsButton({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Open match settings"
-        disabled={isDeleting}
+        disabled={isBusy}
         onPress={onOpen}
         style={({ pressed }) => [
           styles.settingsButton,
-          pressed && !isDeleting && styles.pressed,
-          isDeleting && styles.disabled,
+          pressed && !isBusy && styles.pressed,
+          isBusy && styles.disabled,
         ]}
       >
-        {isDeleting ? (
+        {isBusy ? (
           <ActivityIndicator size="small" color={colors.foreground} />
         ) : (
           <MaterialCommunityIcons
@@ -330,13 +393,31 @@ function MatchSettingsButton({
           <View style={styles.settingsMenu}>
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel="Edit match"
+              disabled={isBusy}
+              onPress={onEdit}
+              style={({ pressed }) => [
+                styles.menuItem,
+                pressed && !isBusy && styles.pressed,
+                isBusy && styles.disabled,
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="pencil-outline"
+                size={20}
+                color={colors.foreground}
+              />
+              <Text style={styles.menuItemText}>Edit Match</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
               accessibilityLabel="Delete match"
-              disabled={isDeleting}
+              disabled={isBusy}
               onPress={onDelete}
               style={({ pressed }) => [
                 styles.deleteMenuItem,
-                pressed && !isDeleting && styles.pressed,
-                isDeleting && styles.disabled,
+                pressed && !isBusy && styles.pressed,
+                isBusy && styles.disabled,
               ]}
             >
               <MaterialCommunityIcons
@@ -350,6 +431,120 @@ function MatchSettingsButton({
         </Pressable>
       </Modal>
     </>
+  );
+}
+
+function EditMatchDialog({
+  isOpen,
+  isSaving,
+  match,
+  onCancel,
+  onSave,
+}: {
+  isOpen: boolean;
+  isSaving: boolean;
+  match: SavedMatchSummary | null;
+  onCancel: () => void;
+  onSave: (values: {
+    playerLegendId: string;
+    opponentLegendId: string;
+    notes: string;
+  }) => void;
+}) {
+  const [playerLegendId, setPlayerLegendId] = useState("");
+  const [opponentLegendId, setOpponentLegendId] = useState("");
+  const [notes, setNotes] = useState("");
+
+  useEffect(() => {
+    if (!isOpen || !match) return;
+    setPlayerLegendId(match.player_legend_id);
+    setOpponentLegendId(match.opponent_legend_id);
+    setNotes(match.notes ?? "");
+  }, [isOpen, match]);
+
+  if (!isOpen || !match) return null;
+
+  return (
+    <Modal visible transparent animationType="fade" onRequestClose={onCancel}>
+      <View style={styles.editBackdrop}>
+        <ScrollView contentContainerStyle={styles.editScroll} keyboardShouldPersistTaps="handled">
+          <View style={styles.editCard}>
+            <Text style={styles.dialogTitle}>Edit match</Text>
+            <Text style={styles.dialogText}>Update the legends and notes for this saved match.</Text>
+            <LegendPicker label="Your legend" value={playerLegendId} onChange={setPlayerLegendId} />
+            <LegendPicker label="Opponent legend" value={opponentLegendId} onChange={setOpponentLegendId} />
+            <Field value={notes} onChangeText={setNotes} placeholder="Match notes" multiline />
+            <Button
+              onPress={() => onSave({ playerLegendId, opponentLegendId, notes })}
+              disabled={isSaving || !playerLegendId || !opponentLegendId}
+              loading={isSaving}
+            >
+              Save changes
+            </Button>
+            <Button variant="outline" onPress={onCancel} disabled={isSaving}>
+              Cancel
+            </Button>
+          </View>
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+}
+
+function LegendPicker({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const selectedLegend = LEGENDS.find((legend) => legend.id === value);
+  const filteredLegends = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    return normalizedQuery
+      ? LEGENDS.filter((legend) => legend.name.toLowerCase().includes(normalizedQuery))
+      : LEGENDS;
+  }, [query]);
+
+  useEffect(() => {
+    if (!open) setQuery("");
+  }, [open]);
+
+  return (
+    <View style={styles.legendPicker}>
+      <Text style={styles.legendPickerLabel}>{label}</Text>
+      <Pressable onPress={() => setOpen(true)} style={({ pressed }) => [styles.legendSelect, pressed && styles.pressed]}>
+        <Text style={styles.legendSelectText}>{selectedLegend?.name ?? "Choose legend"}</Text>
+        <MaterialCommunityIcons name="chevron-right" size={22} color={colors.mutedForeground} />
+      </Pressable>
+      <Modal visible={open} animationType="slide" onRequestClose={() => setOpen(false)}>
+        <View style={styles.legendSelectScreen}>
+          <View style={styles.legendSelectHeader}>
+            <Pressable accessibilityLabel="Close legend picker" onPress={() => setOpen(false)} style={styles.legendSelectClose}>
+              <MaterialCommunityIcons name="arrow-left" size={24} color={colors.foreground} />
+            </Pressable>
+            <Text style={styles.legendSelectTitle}>{label}</Text>
+          </View>
+          <TextInput value={query} onChangeText={setQuery} placeholder="Search legends" placeholderTextColor={colors.mutedForeground} autoCapitalize="none" autoCorrect={false} style={styles.legendSearch} />
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.legendSelectList}>
+            {filteredLegends.map((legend) => {
+              const isSelected = value === legend.id;
+              return (
+                <Pressable key={legend.id} onPress={() => { onChange(legend.id); setOpen(false); }} style={({ pressed }) => [styles.legendSelectOption, isSelected && styles.legendSelectOptionActive, pressed && styles.pressed]}>
+                  <Text style={[styles.legendSelectOptionText, isSelected && styles.legendSelectOptionTextActive]}>{legend.name}</Text>
+                  {isSelected ? <MaterialCommunityIcons name="check" size={22} color={colors.primaryForeground} /> : null}
+                </Pressable>
+              );
+            })}
+            {filteredLegends.length === 0 ? <Text style={styles.legendNoResults}>No legends found</Text> : null}
+          </ScrollView>
+        </View>
+      </Modal>
+    </View>
   );
 }
 
@@ -834,6 +1029,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     padding: 6,
   },
+  menuItem: {
+    minHeight: 46,
+    borderRadius: radius.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 12,
+  },
+  menuItemText: {
+    color: colors.foreground,
+    fontSize: 14,
+    fontWeight: "800",
+  },
   deleteMenuItem: {
     minHeight: 46,
     borderRadius: radius.md,
@@ -859,6 +1067,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
+  },
+  editBackdrop: {
+    flex: 1,
+    backgroundColor: colors.backdrop,
+  },
+  editScroll: {
+    flexGrow: 1,
+    justifyContent: "center",
+    padding: 20,
+  },
+  editCard: {
+    width: "100%",
+    maxWidth: 480,
+    alignSelf: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    backgroundColor: colors.card,
+    padding: 18,
+    gap: 14,
   },
   dialogCard: {
     width: "100%",
@@ -911,6 +1139,103 @@ const styles = StyleSheet.create({
     color: colors.background,
     fontSize: 14,
     fontWeight: "900",
+  },
+  legendPicker: {
+    gap: 8,
+  },
+  legendPickerLabel: {
+    color: colors.foreground,
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  legendSelect: {
+    minHeight: 48,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.background,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    paddingHorizontal: 12,
+  },
+  legendSelectText: {
+    flex: 1,
+    color: colors.foreground,
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  legendSelectScreen: {
+    flex: 1,
+    backgroundColor: colors.background,
+    paddingTop: 56,
+  },
+  legendSelectHeader: {
+    minHeight: 56,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 16,
+  },
+  legendSelectClose: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  legendSelectTitle: {
+    color: colors.foreground,
+    fontSize: 19,
+    fontWeight: "900",
+  },
+  legendSearch: {
+    minHeight: 46,
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.card,
+    color: colors.foreground,
+    fontSize: 15,
+    paddingHorizontal: 12,
+  },
+  legendSelectList: {
+    gap: 8,
+    padding: 16,
+    paddingBottom: 32,
+  },
+  legendSelectOption: {
+    minHeight: 52,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.card,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    paddingHorizontal: 14,
+  },
+  legendSelectOptionActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary,
+  },
+  legendSelectOptionText: {
+    flex: 1,
+    color: colors.foreground,
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  legendSelectOptionTextActive: {
+    color: colors.primaryForeground,
+  },
+  legendNoResults: {
+    color: colors.mutedForeground,
+    fontSize: 15,
+    textAlign: "center",
+    paddingVertical: 24,
   },
   section: {
     gap: 10,

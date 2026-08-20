@@ -243,6 +243,30 @@ export async function deleteSavedMatch(supabase: SupabaseClient, id: string) {
   return { error: error ? toDbError(error, "Could not delete match.") : null };
 }
 
+export async function updateSavedMatch(
+  supabase: SupabaseClient,
+  id: string,
+  updates: Pick<
+    Database["public"]["Tables"]["matches"]["Update"],
+    "player_legend_id" | "opponent_legend_id" | "notes"
+  >,
+) {
+  const { data, error } = await supabase
+    .from("matches")
+    .update({
+      ...updates,
+      notes: updates.notes?.trim() ? updates.notes.trim() : null,
+    })
+    .eq("id", id)
+    .select("*")
+    .single();
+
+  return {
+    data: (data as SavedMatchSummary | null) ?? null,
+    error: error ? toDbError(error, "Could not update match.") : null,
+  };
+}
+
 function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
