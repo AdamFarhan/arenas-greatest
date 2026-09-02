@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type Dispatch,
   type ReactNode,
@@ -49,8 +50,107 @@ type MatchContextValue = {
 };
 
 const MatchContext = createContext<MatchContextValue | undefined>(undefined);
+const MATCH_DRAFT_STORAGE_KEY = "riftbound.active-match-draft.v1";
 const PLAYER_LEGEND_STORAGE_KEY = "riftbound.last-player-legend-id";
 const OPPONENT_LEGEND_STORAGE_KEY = "riftbound.last-opponent-legend-id";
+
+type StoredMatchDraft = {
+  version: 1;
+  match: MatchState;
+  matchStartedAt: number;
+  matchEndedAt: number | null;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isPlayerSide(value: unknown): value is PlayerSide {
+  return value === "player" || value === "opponent";
+}
+
+function isValidScore(value: unknown) {
+  return (
+    isRecord(value) &&
+    Number.isInteger(value.player) &&
+    Number.isInteger(value.opponent) &&
+    Number(value.player) >= 0 &&
+    Number(value.opponent) >= 0
+  );
+}
+
+function isValidScoreEvent(value: unknown) {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    Number.isInteger(value.gameNumber) &&
+    isPlayerSide(value.player) &&
+    ["holding", "conquering", "ability", "manual_adjustment"].includes(
+      String(value.type),
+    ) &&
+    typeof value.pointsDelta === "number" &&
+    isValidScore(value.resultingScore) &&
+    typeof value.createdAt === "string"
+  );
+}
+
+function isValidGame(value: unknown) {
+  return (
+    isRecord(value) &&
+    Number.isInteger(value.gameNumber) &&
+    isPlayerSide(value.startingPlayer) &&
+    [8, 9, 10].includes(Number(value.winningPoint)) &&
+    isValidScore(value.score) &&
+    Array.isArray(value.events) &&
+    value.events.every(isValidScoreEvent) &&
+    (value.winner === undefined || isPlayerSide(value.winner))
+  );
+}
+
+function isValidMatch(value: unknown): value is MatchState {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    Array.isArray(value.games) &&
+    value.games.length > 0 &&
+    value.games.every(isValidGame) &&
+    isValidScore(value.wins) &&
+    (value.winner === undefined || isPlayerSide(value.winner))
+  );
+}
+
+function parseStoredMatchDraft(value: string | null): StoredMatchDraft | null {
+  if (!value) return null;
+
+  try {
+    const draft: unknown = JSON.parse(value);
+
+    if (
+      !isRecord(draft) ||
+      draft.version !== 1 ||
+      !isValidMatch(draft.match) ||
+      typeof draft.matchStartedAt !== "number" ||
+      !Number.isFinite(draft.matchStartedAt) ||
+      !(
+        draft.matchEndedAt === null ||
+        (typeof draft.matchEndedAt === "number" &&
+          Number.isFinite(draft.matchEndedAt))
+      )
+    ) {
+      return null;
+    }
+
+    return draft as StoredMatchDraft;
+  } catch {
+    return null;
+  }
+}
+
+function parseTimestamp(value: string | undefined) {
+  if (!value) return null;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? timestamp : null;
+}
 
 function isKnownLegendId(id: string | null): id is string {
   return Boolean(id && LEGENDS.some((legend) => legend.id === id));
@@ -74,6 +174,12 @@ export function MatchProvider({ children }: { children: ReactNode }) {
   const [matchStartedAt, setMatchStartedAt] = useState<number | null>(null);
   const [matchEndedAt, setMatchEndedAt] = useState<number | null>(null);
   const [now, setNow] = useState(Date.now());
+  const [matchDraftLoaded, setMatchDraftLoaded] = useState(false);
+  const draftWriteQueue = useRef(Promise.resolve());
+
+  const queueDraftWrite = useCallback((operation: () => Promise<void>) => {
+    draftWriteQueue.current = draftWriteQueue.current.then(operation, operation);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -107,6 +213,42 @@ export function MatchProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadStoredMatchDraft() {
+      let storedDraft: string | null = null;
+
+      try {
+        storedDraft = await getStoredItem(MATCH_DRAFT_STORAGE_KEY);
+        const draft = parseStoredMatchDraft(storedDraft);
+
+        if (cancelled) return;
+
+        if (draft) {
+          setMatch(draft.match);
+          setMatchStartedAt(draft.matchStartedAt);
+          setMatchEndedAt(draft.matchEndedAt);
+          setNow(Date.now());
+        } else if (storedDraft) {
+          await deleteStoredItem(MATCH_DRAFT_STORAGE_KEY);
+        }
+      } catch {
+        await deleteStoredItem(MATCH_DRAFT_STORAGE_KEY).catch(() => {});
+      } finally {
+        if (!cancelled) {
+          setMatchDraftLoaded(true);
+        }
+      }
+    }
+
+    void loadStoredMatchDraft();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const setPlayerLegendId = useCallback((id: string) => {
     if (!isKnownLegendId(id)) return;
     setPlayerLegendIdState(id);
@@ -128,6 +270,40 @@ export function MatchProvider({ children }: { children: ReactNode }) {
     if (!match.winner || matchEndedAt) return;
     setMatchEndedAt(Date.now());
   }, [match.winner, matchEndedAt]);
+
+  useEffect(() => {
+    if (!matchDraftLoaded) return;
+
+    if (match.games.length === 0) {
+      queueDraftWrite(() => deleteStoredItem(MATCH_DRAFT_STORAGE_KEY));
+      return;
+    }
+
+    const storedMatchStartedAt =
+      matchStartedAt ?? parseTimestamp(match.games[0]?.startedAt);
+
+    if (!storedMatchStartedAt) return;
+
+    const storedMatchEndedAt = match.winner
+      ? (matchEndedAt ?? parseTimestamp(match.games.at(-1)?.endedAt))
+      : null;
+    const draft: StoredMatchDraft = {
+      version: 1,
+      match,
+      matchStartedAt: storedMatchStartedAt,
+      matchEndedAt: storedMatchEndedAt,
+    };
+
+    queueDraftWrite(() =>
+      setStoredItem(MATCH_DRAFT_STORAGE_KEY, JSON.stringify(draft)),
+    );
+  }, [
+    match,
+    matchDraftLoaded,
+    matchEndedAt,
+    matchStartedAt,
+    queueDraftWrite,
+  ]);
 
   useEffect(() => {
     if (!matchStartedAt || matchEndedAt) return;
@@ -168,6 +344,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
       elapsedSeconds,
       matchStartedAt: matchStartedAt ? new Date(matchStartedAt).toISOString() : null,
       resetMatch() {
+        queueDraftWrite(() => deleteStoredItem(MATCH_DRAFT_STORAGE_KEY));
         setMatch(createMatch());
         setNotes("");
         setSaveState("idle");
@@ -190,6 +367,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
       notes,
       opponentLegendId,
       playerLegendId,
+      queueDraftWrite,
       reviewOpen,
       saveState,
       saveStatus,
