@@ -10,11 +10,14 @@ export const LEGEND_ART: Record<string, ImageSourcePropType> = {
   "darius-hand-of-noxus": require("@riftbound/legend-art/assets/darius-hand-of-noxus.png"),
   "diana-scorn-of-the-moon": require("@riftbound/legend-art/assets/diana-scorn-of-the-moon.png"),
   "draven-glorious-executioner": require("@riftbound/legend-art/assets/draven-glorious-executioner.png"),
+  "ekko-boy-who-shattered-time": require("@riftbound/legend-art/assets/ekko-boy-who-shattered-time.png"),
+  "evelynn-agonys-embrace": require("@riftbound/legend-art/assets/evelynn-agonys-embrace.png"),
   "ezreal-prodigal-explorer": require("@riftbound/legend-art/assets/ezreal-prodigal-explorer.png"),
   "fiora-grand-duelist": require("@riftbound/legend-art/assets/fiora-grand-duelist.png"),
   "garen-might-of-demacia": require("@riftbound/legend-art/assets/garen-might-of-demacia.png"),
   "irelia-blade-dancer": require("@riftbound/legend-art/assets/irelia-blade-dancer.png"),
   "ivern-green-father": require("@riftbound/legend-art/assets/ivern-green-father.png"),
+  "jarvan-iv-exemplar-of-demacia": require("@riftbound/legend-art/assets/jarvan-iv-exemplar-of-demacia.png"),
   "jax-grandmaster-at-arms": require("@riftbound/legend-art/assets/jax-grandmaster-at-arms.png"),
   "jayce-defender-of-tomorrow": require("@riftbound/legend-art/assets/jayce-defender-of-tomorrow.png"),
   "jhin-virtuoso": require("@riftbound/legend-art/assets/jhin-virtuoso.png"),
@@ -22,6 +25,7 @@ export const LEGEND_ART: Record<string, ImageSourcePropType> = {
   "kaisa-daughter-of-the-void": require("@riftbound/legend-art/assets/kaisa-daughter-of-the-void.png"),
   "kennen-heart-of-the-tempest": require("@riftbound/legend-art/assets/kennen-heart-of-the-tempest.png"),
   "khazix-voidreaver": require("@riftbound/legend-art/assets/khazix-voidreaver.png"),
+  "ksante-pride-of-nazumah": require("@riftbound/legend-art/assets/ksante-pride-of-nazumah.png"),
   "leblanc-deceiver": require("@riftbound/legend-art/assets/leblanc-deceiver.png"),
   "lee-sin-blind-monk": require("@riftbound/legend-art/assets/lee-sin-blind-monk.png"),
   "leona-radiant-dawn": require("@riftbound/legend-art/assets/leona-radiant-dawn.png"),
@@ -32,7 +36,9 @@ export const LEGEND_ART: Record<string, ImageSourcePropType> = {
   "master-yi-wuju-master": require("@riftbound/legend-art/assets/master-yi-wuju-master.png"),
   "mel-souls-reflection": require("@riftbound/legend-art/assets/mel-souls-reflection.png"),
   "miss-fortune-bounty-hunter": require("@riftbound/legend-art/assets/miss-fortune-bounty-hunter.png"),
+  "mordekaiser-iron-revenant": require("@riftbound/legend-art/assets/mordekaiser-iron-revenant.png"),
   "nasus-curator-of-the-sands": require("@riftbound/legend-art/assets/nasus-curator-of-the-sands.png"),
+  "orianna-lady-of-clockwork": require("@riftbound/legend-art/assets/orianna-lady-of-clockwork.png"),
   "ornn-fire-below-the-mountain": require("@riftbound/legend-art/assets/ornn-fire-below-the-mountain.png"),
   "poppy-keeper-of-the-hammer": require("@riftbound/legend-art/assets/poppy-keeper-of-the-hammer.png"),
   "pyke-bloodharbor-ripper": require("@riftbound/legend-art/assets/pyke-bloodharbor-ripper.png"),
@@ -40,7 +46,9 @@ export const LEGEND_ART: Record<string, ImageSourcePropType> = {
   "renata-glasc-chem-baroness": require("@riftbound/legend-art/assets/renata-glasc-chem-baroness.png"),
   "renekton-butcher-of-the-sands": require("@riftbound/legend-art/assets/renekton-butcher-of-the-sands.png"),
   "rengar-pridestalker": require("@riftbound/legend-art/assets/rengar-pridestalker.png"),
+  "riven-the-exile": require("@riftbound/legend-art/assets/riven-the-exile.png"),
   "rumble-mechanized-menace": require("@riftbound/legend-art/assets/rumble-mechanized-menace.png"),
+  "seraphine-starry-eyed-songstress": require("@riftbound/legend-art/assets/seraphine-starry-eyed-songstress.png"),
   "sett-the-boss": require("@riftbound/legend-art/assets/sett-the-boss.png"),
   "shen-eye-of-twilight": require("@riftbound/legend-art/assets/shen-eye-of-twilight.png"),
   "sivir-battle-mistress": require("@riftbound/legend-art/assets/sivir-battle-mistress.png"),
@@ -50,7 +58,8 @@ export const LEGEND_ART: Record<string, ImageSourcePropType> = {
   "viktor-herald-of-the-arcane": require("@riftbound/legend-art/assets/viktor-herald-of-the-arcane.png"),
   "volibear-relentless-storm": require("@riftbound/legend-art/assets/volibear-relentless-storm.png"),
   "yasuo-unforgiven": require("@riftbound/legend-art/assets/yasuo-unforgiven.png"),
-  "zed-master-of-shadows": require("@riftbound/legend-art/assets/zed-master-of-shadows.png")
+  "zed-master-of-shadows": require("@riftbound/legend-art/assets/zed-master-of-shadows.png"),
+  "ziggs-hexplosives-expert": require("@riftbound/legend-art/assets/ziggs-hexplosives-expert.png")
 };
 
 export function getLegendArtSource(legendId: string) {

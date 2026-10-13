@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-22T16:23:59.762Z",
+  "generatedAt": "2026-10-13T15:25:31.149Z",
   "source": "https://api.riftcodex.com",
   "knownSets": [
     {
@@ -41,6 +41,11 @@
       "setId": "VEN",
       "name": "Vendetta",
       "publishedOn": "2026-07-31T00:00:00"
+    },
+    {
+      "setId": "RAD",
+      "name": "Radiance",
+      "publishedOn": "2026-10-31T00:00:00"
     }
   ],
   "art": {
@@ -140,6 +145,30 @@
       "artist": "Pandart Studio",
       "updatedOn": "2026-03-19T20:26:02.645313+00:00"
     },
+    "ekko-boy-who-shattered-time": {
+      "file": "ekko-boy-who-shattered-time.png",
+      "legendId": "ekko-boy-who-shattered-time",
+      "legendName": "Ekko, Boy Who Shattered Time",
+      "setId": "RAD",
+      "setName": "Radiance",
+      "riftcodexCardId": "riftbound-org-rad-139-167",
+      "riftboundId": "rad-139-167",
+      "imageUrl": "https://riftbound.org/storage/cards/rad/rad-139-167.webp?v=1791246998",
+      "artist": "Envar Studio",
+      "updatedOn": null
+    },
+    "evelynn-agonys-embrace": {
+      "file": "evelynn-agonys-embrace.png",
+      "legendId": "evelynn-agonys-embrace",
+      "legendName": "Evelynn, Agony's Embrace",
+      "setId": "RAD",
+      "setName": "Radiance",
+      "riftcodexCardId": "riftbound-org-rad-153-167",
+      "riftboundId": "rad-153-167",
+      "imageUrl": "https://riftbound.org/storage/cards/rad/rad-153-167.webp?v=1791903605",
+      "artist": "Envar Studio",
+      "updatedOn": null
+    },
     "ezreal-prodigal-explorer": {
       "file": "ezreal-prodigal-explorer.png",
       "legendId": "ezreal-prodigal-explorer",
@@ -199,6 +228,18 @@
       "imageUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/a2ca02d26c1e95db03690729bd31113bda7e4140-744x1039.png",
       "artist": "Envar Studio",
       "updatedOn": "2026-03-19T20:26:17.348144+00:00"
+    },
+    "jarvan-iv-exemplar-of-demacia": {
+      "file": "jarvan-iv-exemplar-of-demacia.png",
+      "legendId": "jarvan-iv-exemplar-of-demacia",
+      "legendName": "Jarvan IV, Exemplar of Demacia",
+      "setId": "RAD",
+      "setName": "Radiance",
+      "riftcodexCardId": "riftbound-org-rad-155-167",
+      "riftboundId": "rad-155-167",
+      "imageUrl": "https://riftbound.org/storage/cards/rad/rad-155-167.webp?v=1791903605",
+      "artist": "Grafit Studio",
+      "updatedOn": null
     },
     "jax-grandmaster-at-arms": {
       "file": "jax-grandmaster-at-arms.png",
@@ -283,6 +324,18 @@
       "imageUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/a5db0b3340a189de1cf9d8174b11eb583f19ea28-744x1039.png",
       "artist": "Envar Studio",
       "updatedOn": "2026-03-19T20:26:17.290966+00:00"
+    },
+    "ksante-pride-of-nazumah": {
+      "file": "ksante-pride-of-nazumah.png",
+      "legendId": "ksante-pride-of-nazumah",
+      "legendName": "K'Sante, Pride of Nazumah",
+      "setId": "RAD",
+      "setName": "Radiance",
+      "riftcodexCardId": "riftbound-org-rad-147-167",
+      "riftboundId": "rad-147-167",
+      "imageUrl": "https://riftbound.org/storage/cards/rad/rad-147-167.webp?v=1791246999",
+      "artist": "Envar Studio",
+      "updatedOn": null
     },
     "leblanc-deceiver": {
       "file": "leblanc-deceiver.png",
@@ -404,6 +457,18 @@
       "artist": "Six More Vodka",
       "updatedOn": "2026-03-19T20:25:57.729377+00:00"
     },
+    "mordekaiser-iron-revenant": {
+      "file": "mordekaiser-iron-revenant.png",
+      "legendId": "mordekaiser-iron-revenant",
+      "legendName": "Mordekaiser, Iron Revenant",
+      "setId": "RAD",
+      "setName": "Radiance",
+      "riftcodexCardId": "riftbound-org-rad-143-167",
+      "riftboundId": "rad-143-167",
+      "imageUrl": "https://riftbound.org/storage/cards/rad/rad-143-167.webp?v=1791507604",
+      "artist": "TUTU",
+      "updatedOn": null
+    },
     "nasus-curator-of-the-sands": {
       "file": "nasus-curator-of-the-sands.png",
       "legendId": "nasus-curator-of-the-sands",
@@ -415,6 +480,18 @@
       "imageUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/f26a25c5fddba7da788455c3d82b85c5abc7a2eb-744x1039.png?accountingTag=RB",
       "artist": "Envar Studio",
       "updatedOn": "2026-07-16T17:03:34.005527+00:00"
+    },
+    "orianna-lady-of-clockwork": {
+      "file": "orianna-lady-of-clockwork.png",
+      "legendId": "orianna-lady-of-clockwork",
+      "legendName": "Orianna, Lady of Clockwork",
+      "setId": "RAD",
+      "setName": "Radiance",
+      "riftcodexCardId": "riftbound-org-rad-145-167",
+      "riftboundId": "rad-145-167",
+      "imageUrl": "https://riftbound.org/storage/cards/rad/rad-145-167.webp?v=1791246999",
+      "artist": "Envar Studio",
+      "updatedOn": null
     },
     "ornn-fire-below-the-mountain": {
       "file": "ornn-fire-below-the-mountain.png",
@@ -500,6 +577,18 @@
       "artist": "Envar Studio",
       "updatedOn": "2026-03-19T20:26:22.328747+00:00"
     },
+    "riven-the-exile": {
+      "file": "riven-the-exile.png",
+      "legendId": "riven-the-exile",
+      "legendName": "Riven, The Exile",
+      "setId": "RAD",
+      "setName": "Radiance",
+      "riftcodexCardId": "riftbound-org-rad-149-167",
+      "riftboundId": "rad-149-167",
+      "imageUrl": "https://riftbound.org/storage/cards/rad/rad-149-167.webp?v=1791903605",
+      "artist": "Grafit Studio",
+      "updatedOn": null
+    },
     "rumble-mechanized-menace": {
       "file": "rumble-mechanized-menace.png",
       "legendId": "rumble-mechanized-menace",
@@ -511,6 +600,18 @@
       "imageUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/f311115e4c527ce82010596ce462d4050a9201b2-744x1039.png",
       "artist": "Pandart Studio",
       "updatedOn": "2026-03-19T20:26:03.732280+00:00"
+    },
+    "seraphine-starry-eyed-songstress": {
+      "file": "seraphine-starry-eyed-songstress.png",
+      "legendId": "seraphine-starry-eyed-songstress",
+      "legendName": "Seraphine, Starry-Eyed Songstress",
+      "setId": "RAD",
+      "setName": "Radiance",
+      "riftcodexCardId": "riftbound-org-rad-151-167",
+      "riftboundId": "rad-151-167",
+      "imageUrl": "https://riftbound.org/storage/cards/rad/rad-151-167.webp?v=1791246999",
+      "artist": "Naifan Zhang",
+      "updatedOn": null
     },
     "sett-the-boss": {
       "file": "sett-the-boss.png",
@@ -631,6 +732,18 @@
       "imageUrl": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/aa316eb1b01c8d036eaba84b03909027fe69f6e2-744x1039.png?accountingTag=RB",
       "artist": "Envar Studio",
       "updatedOn": "2026-07-14T21:35:19.798031+00:00"
+    },
+    "ziggs-hexplosives-expert": {
+      "file": "ziggs-hexplosives-expert.png",
+      "legendId": "ziggs-hexplosives-expert",
+      "legendName": "Ziggs, Hexplosives Expert",
+      "setId": "RAD",
+      "setName": "Radiance",
+      "riftcodexCardId": "riftbound-org-rad-141-167",
+      "riftboundId": "rad-141-167",
+      "imageUrl": "https://riftbound.org/storage/cards/rad/rad-141-167.webp?v=1791246999",
+      "artist": "Envar Studio",
+      "updatedOn": null
     }
   }
 }

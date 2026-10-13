@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import sharp from "sharp";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
@@ -19,6 +20,22 @@ const DEFAULT_KNOWN_SETS = [
   { setId: "SFD", name: "Spiritforged" },
   { setId: "UNL", name: "Unleashed" },
 ];
+const FALLBACK_SETS = [
+  { setId: "RAD", name: "Radiance", publishedOn: "2026-10-31T00:00:00", cardCount: 167 },
+];
+const FALLBACK_CARDS_BY_SET = {
+  RAD: [
+    radianceLegendCard(139, "Ekko", "Boy Who Shattered Time", "Fury, Mind", "Envar Studio", "1791246998"),
+    radianceLegendCard(141, "Ziggs", "Hexplosives Expert", "Fury, Chaos", "Envar Studio", "1791246999"),
+    radianceLegendCard(143, "Mordekaiser", "Iron Revenant", "Fury, Order", "TUTU", "1791507604"),
+    radianceLegendCard(145, "Orianna", "Lady of Clockwork", "Calm, Mind", "Envar Studio", "1791246999"),
+    radianceLegendCard(147, "K'Sante", "Pride of Nazumah", "Calm, Body", "Envar Studio", "1791246999"),
+    radianceLegendCard(149, "Riven", "The Exile", "Calm, Chaos", "Grafit Studio", "1791903605"),
+    radianceLegendCard(151, "Seraphine", "Starry-Eyed Songstress", "Mind, Order", "Naifan Zhang", "1791246999"),
+    radianceLegendCard(153, "Evelynn", "Agony's Embrace", "Body, Chaos", "Envar Studio", "1791903605"),
+    radianceLegendCard(155, "Jarvan IV", "Exemplar of Demacia", "Body, Order", "Grafit Studio", "1791903605"),
+  ],
+};
 
 const args = new Set(process.argv.slice(2));
 const setArgIndex = process.argv.findIndex((arg) => arg === "--set");
@@ -181,12 +198,14 @@ function mergeKnownSets(manifestSets = []) {
 
 async function fetchAllSets() {
   const response = await fetchJson("/sets?size=100&page=1");
-  return response.items.map((set) => ({
+  const sets = response.items.map((set) => ({
     setId: set.set_id,
     name: set.name,
     publishedOn: set.published_on,
     cardCount: set.card_count,
   }));
+  const knownSetIds = new Set(sets.map((set) => set.setId));
+  return [...sets, ...FALLBACK_SETS.filter((set) => !knownSetIds.has(set.setId))];
 }
 
 function shouldSyncRemoteSet(set, localSetIds) {
@@ -209,6 +228,10 @@ function chooseTargetSets({ localSets, missingSets, remoteSets }) {
 }
 
 async function fetchAllCards(setId) {
+  if (FALLBACK_CARDS_BY_SET[setId]) {
+    return FALLBACK_CARDS_BY_SET[setId];
+  }
+
   const cards = [];
   for (let page = 1; ; page += 1) {
     const response = await fetchJson(`/cards?set_id=${encodeURIComponent(setId)}&size=100&page=${page}`);
@@ -304,7 +327,40 @@ async function downloadFile(url, destination) {
     throw new Error(`Image download failed: ${response.status} ${response.statusText} ${url}`);
   }
   const bytes = Buffer.from(await response.arrayBuffer());
-  await writeFile(destination, bytes);
+  if (path.extname(destination) === ".png" && response.headers.get("content-type")?.includes("image/webp")) {
+    await writeFile(destination, await sharp(bytes).png().toBuffer());
+  } else {
+    await writeFile(destination, bytes);
+  }
+}
+
+function radianceLegendCard(number, champion, title, domain, artist, imageVersion) {
+  const riftboundId = `rad-${number}-167`;
+  const titleSlug = slugify(title);
+  return {
+    id: `riftbound-org-${riftboundId}`,
+    riftbound_id: riftboundId,
+    name: `${champion} - ${title}`,
+    classification: {
+      type: "Legend",
+      domain: domain.split(", "),
+    },
+    set: {
+      set_id: "RAD",
+      label: "Radiance",
+    },
+    media: {
+      image_url: `https://riftbound.org/storage/cards/rad/${riftboundId}.webp?v=${imageVersion}`,
+      artist,
+    },
+    metadata: {
+      alternate_art: false,
+      overnumbered: false,
+      signature: false,
+      updated_on: null,
+      source_url: `https://riftbound.org/cards/rad-radiance/${riftboundId}/${titleSlug}`,
+    },
+  };
 }
 
 function renderAssetMap(art) {
